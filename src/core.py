@@ -27,6 +27,9 @@ SETTINGS = "SettingsUser.json"
 PP = "PostProcessing"
 EDITOR = ["Weathers", "ImageSpaces", "SceneSettings", "Volumetric Lighting", "EditorSettings.json"]
 META = "preset.json"
+# Partie ENB facultative d'un preset (Effects 11) : ENB/enbseries.ini et ENB/enbseries/, posés à la racine du jeu
+ENB = "ENB"
+ENB_ITEMS = ("enbseries.ini", "enbseries")
 STATE = ".preset_actif"
 # Caches propres à une machine : jamais copiés depuis une archive
 SKIP = {"UnifiedWaterCache", "UWLoadOrder.hash", "ShaderCache", ".DS_Store"}
@@ -56,6 +59,7 @@ class Preset:
     pp_files: list[str] = field(default_factory=list)
     editor: list[str] = field(default_factory=list)
     meta: dict = field(default_factory=dict)
+    has_enb: bool = False
 
 
 def _version(settings: Path) -> str:
@@ -73,6 +77,7 @@ def read_preset(path: Path) -> Preset:
     pp = path / PP
     p.pp_files = sorted(f.name for f in pp.glob("*.json")) if pp.is_dir() else []
     p.editor = [e for e in EDITOR if (path / e).exists()]
+    p.has_enb = (path / ENB / "enbseries.ini").is_file()
     try:
         p.meta = json.loads((path / META).read_text(encoding="utf-8"))
     except (OSError, ValueError):
@@ -107,6 +112,11 @@ def game_running() -> bool:
         return False
 
 
+def game_dir(cs_dir: str) -> Path:
+    """Racine du jeu : CommunityShaders → Plugins → SKSE → Data → jeu."""
+    return Path(cs_dir).parents[3]
+
+
 def _copy(src: Path, dst: Path) -> None:
     if src.is_dir():
         shutil.copytree(src, dst, ignore=shutil.ignore_patterns(*SKIP))
@@ -126,7 +136,10 @@ def snapshot(cs_dir: str, dest: Path) -> Path:
 
 def backup(cfg: dict, reason: str) -> Path:
     stamp = time.strftime("%Y-%m-%d_%H%M%S")
-    dest = snapshot(cfg["cs_dir"], Path(cfg["backup_dir"]) / stamp)
+    dest, n = Path(cfg["backup_dir"]) / stamp, 2
+    while dest.exists():                 # deux opérations dans la même seconde : ne jamais écrire dans une sauvegarde
+        dest, n = Path(cfg["backup_dir"]) / f"{stamp}_{n}", n + 1
+    dest = snapshot(cfg["cs_dir"], dest)
     (dest / META).write_text(json.dumps({"reason": reason, "date": stamp}, ensure_ascii=False, indent=2),
                              encoding="utf-8")
     return dest
@@ -150,6 +163,8 @@ def apply_preset(cfg: dict, preset_path: Path, label: str | None = None) -> Path
         raise FileNotFoundError(str(cs))
     preset_path = Path(preset_path)
     saved = backup(cfg, f"avant {label or preset_path.name}")
+    if (preset_path / ENB / "enbseries.ini").is_file():
+        _apply_enb(cfg, preset_path / ENB, saved / ENB)
     if (preset_path / SETTINGS).is_file():
         for e in EDITOR:
             t = cs / e
@@ -158,7 +173,8 @@ def apply_preset(cfg: dict, preset_path: Path, label: str | None = None) -> Path
             elif t.exists():
                 t.unlink()
         for item in preset_path.iterdir():
-            if item.name in SKIP or item.name.startswith(".") or item.name in (PP, META):
+            # seulement ce que Community Shaders lit : pas de notes, d'aperçus ni de partie ENB
+            if item.name not in [SETTINGS, "Overrides"] + EDITOR:
                 continue
             t = cs / item.name
             if t.is_dir():
@@ -172,6 +188,19 @@ def apply_preset(cfg: dict, preset_path: Path, label: str | None = None) -> Path
     if label is not None:
         (Path(cfg["library"]) / STATE).write_text(label, encoding="utf-8")
     return saved
+
+
+def _apply_enb(cfg: dict, enb_src: Path, enb_saved: Path) -> None:
+    """Remplace le preset ENB du jeu. L'actuel (enbseries.ini, enbseries/) est déplacé dans la sauvegarde,
+    rien n'est effacé ; restaurer cette sauvegarde le remet en place."""
+    root = game_dir(cfg["cs_dir"])
+    enb_saved.mkdir(parents=True, exist_ok=True)
+    for name in ENB_ITEMS:
+        if (root / name).exists():
+            shutil.move(str(root / name), str(enb_saved / name))
+    for name in ENB_ITEMS:
+        if (enb_src / name).exists():
+            _copy(enb_src / name, root / name)
 
 
 def save_current(cfg: dict, name: str) -> Path:

@@ -99,3 +99,27 @@ def test_nexus_liens():
         "https://www.nexusmods.com/games/skyrimspecialedition/mods?keyword=Community%20Shaders%20preset"
         "&sort=endorsements")
     assert nexus.parse_mod_id("https://www.nexusmods.com/skyrimspecialedition/mods/165803?tab=files") == 165803
+
+def test_preset_avec_enb(tmp_path):
+    cs = _game(tmp_path)
+    root = tmp_path                                     # racine du jeu : Data/SKSE/Plugins/CommunityShaders → 4 niveaux
+    (root / "enbseries").mkdir(); (root / "enbseries" / "enbeffect.fx").write_text("ancien")
+    (root / "enbseries.ini").write_text("[GLOBAL]\nUseEffect=true\n")
+    cfg = {"library": str(tmp_path / "lib"), "cs_dir": str(cs), "backup_dir": str(tmp_path / "bk")}
+    pr = tmp_path / "lib" / "Cine"; (pr / "ENB" / "enbseries").mkdir(parents=True)
+    (pr / "SettingsUser.json").write_text(json.dumps({"Version": "1-9-0-0", "x": 3}))
+    (pr / "ENB" / "enbseries.ini").write_text("[GLOBAL]\nUseEffect=true\n; neuf\n")
+    (pr / "ENB" / "enbseries" / "enbeffect.fx").write_text("neuf")
+    (pr / "LISEZMOI.md").write_text("notes"); (pr / "Apercus").mkdir(); (pr / "Apercus" / "a.png").write_text("x")
+    assert core.read_preset(pr).has_enb
+    saved = core.apply_preset(cfg, pr, "Cine")
+    assert (root / "enbseries" / "enbeffect.fx").read_text() == "neuf"
+    assert "neuf" in (root / "enbseries.ini").read_text()
+    assert not (cs / "ENB").exists() and not (cs / "LISEZMOI.md").exists() and not (cs / "Apercus").exists()
+    assert (saved / "ENB" / "enbseries" / "enbeffect.fx").read_text() == "ancien"
+    assert core.read_preset(saved).has_enb
+    second = core.apply_preset(cfg, saved, None)                        # restauration, dans la même seconde
+    assert second != saved
+    assert (root / "enbseries" / "enbeffect.fx").read_text() == "ancien"
+    assert (saved / "ENB" / "enbseries" / "enbeffect.fx").read_text() == "ancien"   # sauvegarde intacte
+    assert (second / "ENB" / "enbseries" / "enbeffect.fx").read_text() == "neuf"

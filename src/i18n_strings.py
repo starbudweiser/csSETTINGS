@@ -265,4 +265,14 @@ TR = {
                                                          "Questo file non è per Skyrim Special Edition.",
                                                          "Este archivo no es para Skyrim Special Edition."),
     "Téléchargement depuis Nexus…": ("Downloading from Nexus…", "Download da Nexus…", "Descargando desde Nexus…"),
+    # ------------------------------------------------------------ partie ENB
+    "<b>Preset ENB (Effects 11)</b> : remplace enbseries.ini et le dossier enbseries à la racine du jeu. "
+    "Ceux en place sont déplacés dans la sauvegarde, rien n'est effacé.": (
+        "<b>ENB preset (Effects 11)</b>: replaces enbseries.ini and the enbseries folder in the game folder. "
+        "The current ones are moved into the backup; nothing is deleted.",
+        "<b>Preset ENB (Effects 11)</b>: sostituisce enbseries.ini e la cartella enbseries nella cartella del gioco. "
+        "Quelli attuali vengono spostati nel backup, nulla viene eliminato.",
+        "<b>Preset ENB (Effects 11)</b>: reemplaza enbseries.ini y la carpeta enbseries en la carpeta del juego. "
+        "Los actuales se mueven a la copia de seguridad; no se borra nada."),
+    "+ ENB": ("+ ENB", "+ ENB", "+ ENB"),
 }

@@ -773,7 +773,7 @@ class Main(QWidget):
         for r, b in enumerate(self.backups):
             vals = (b.name.replace("_", " "), b.meta.get("reason", ""), b.version,
                     ", ".join(([L("réglages")] if b.has_settings else []) + b.editor +
-                              ([f"{len(b.pp_files)} PP"] if b.pp_files else [])))
+                              ([f"{len(b.pp_files)} PP"] if b.pp_files else []) + (["ENB"] if b.has_enb else [])))
             for c, v in enumerate(vals):
                 self.btable.setItem(r, c, QTableWidgetItem(v))
         self._game_state()
@@ -802,6 +802,8 @@ class Main(QWidget):
         if p.name == self.active:
             tags.append((L("✓ Chargé"), "success"))
         tags.append((f"CS {p.version}" if p.has_settings else L("Post-traitement seul"), "accent-text"))
+        if p.has_enb:
+            tags.append((L("+ ENB"), "accent-text"))
         if p.has_settings and p.version and not p.version.startswith("1.9"):
             tags.append((L("⚠ Réglages d'une autre version de CS"), "warning"))
         self.badges.setText("&nbsp;&nbsp;&nbsp;".join(f"<span style='color:{S.c(st)}'>{t}</span>" for t, st in tags))
@@ -820,6 +822,9 @@ class Main(QWidget):
             lines.append(L("Données de l'éditeur CS : {list}", list=", ".join(p.editor)))
         if p.pp_files:
             lines.append(L("Post-traitement ajouté au menu CS : {list}", list=", ".join(p.pp_files)))
+        if p.has_enb:
+            lines.append(L("<b>Preset ENB (Effects 11)</b> : remplace enbseries.ini et le dossier enbseries à la "
+                           "racine du jeu. Ceux en place sont déplacés dans la sauvegarde, rien n'est effacé."))
         self.details.setText("<br><br>".join(lines))
 
     def _show_compat(self, p):
