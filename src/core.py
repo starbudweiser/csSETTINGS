@@ -157,6 +157,8 @@ def apply_preset(cfg: dict, preset_path: Path, label: str | None = None) -> Path
 
     Un preset avec SettingsUser.json remplace les réglages et les données de l'éditeur CS.
     Un preset de post-traitement seul ajoute ses fichiers sans toucher aux réglages.
+    Les préférences du joueur (USER_SECTIONS : raccourcis du menu CS, threads de compilation) sont gardées,
+    sauf pour une restauration de sauvegarde (label None), qui remet tout tel quel.
     """
     cs = Path(cfg["cs_dir"])
     if not cs.is_dir():
@@ -180,6 +182,8 @@ def apply_preset(cfg: dict, preset_path: Path, label: str | None = None) -> Path
             if t.is_dir():
                 shutil.rmtree(t)
             _copy(item, t)
+        if label is not None:
+            _keep_user_sections(cs / SETTINGS, saved / SETTINGS)
     if (preset_path / PP).is_dir():
         (cs / PP).mkdir(exist_ok=True)
         for f in (preset_path / PP).iterdir():
@@ -188,6 +192,20 @@ def apply_preset(cfg: dict, preset_path: Path, label: str | None = None) -> Path
     if label is not None:
         (Path(cfg["library"]) / STATE).write_text(label, encoding="utf-8")
     return saved
+
+
+# Sections de SettingsUser.json propres au joueur et à sa machine, pas au rendu d'un preset
+USER_SECTIONS = ("Menu", "Advanced")
+
+
+def _keep_user_sections(settings: Path, previous: Path) -> None:
+    """Remet dans le SettingsUser.json appliqué les sections USER_SECTIONS de la configuration d'avant."""
+    old, new = _read_json(previous), _read_json(settings)
+    kept = {k: old[k] for k in USER_SECTIONS if isinstance(old.get(k), dict)}
+    if not new or not kept:
+        return
+    new.update(kept)
+    settings.write_text(json.dumps(new, indent=1, ensure_ascii=False), encoding="utf-8")
 
 
 def _apply_enb(cfg: dict, enb_src: Path, enb_saved: Path) -> None:

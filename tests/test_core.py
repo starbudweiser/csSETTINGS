@@ -153,3 +153,19 @@ def test_frame_generation_forcee(tmp_path):
                                                          "Upscaling": {"frameGenerationForceEnable": force}}))
         c = core.check_preset(d, ref)
         assert c.frame_gen is attendu and (c.level == "warning") is attendu
+
+def test_preferences_joueur_gardees(tmp_path):
+    """Un preset (Cabbage) ne remplace pas les raccourcis du menu CS ni les threads de compilation du joueur."""
+    cs = tmp_path / "Data" / "SKSE" / "Plugins" / "CommunityShaders"; cs.mkdir(parents=True)
+    (cs / "SettingsUser.json").write_text(json.dumps({"Version": "1-9-0-0", "Menu": {"ToggleKey": 99},
+                                                      "Advanced": {"Compiler Threads": 16}, "Vignette": {"x": 0}}))
+    cfg = {"library": str(tmp_path / "lib"), "cs_dir": str(cs), "backup_dir": str(tmp_path / "bk")}
+    pr = tmp_path / "lib" / "Cabbage"; pr.mkdir(parents=True)
+    (pr / "SettingsUser.json").write_text(json.dumps({"Version": "1-8-0-0", "Menu": {"ToggleKey": 35},
+                                                      "Advanced": {"Compiler Threads": 18}, "Vignette": {"x": 1}}))
+    saved = core.apply_preset(cfg, pr, "Cabbage")
+    d = json.loads((cs / "SettingsUser.json").read_text())
+    assert d["Menu"] == {"ToggleKey": 99} and d["Advanced"] == {"Compiler Threads": 16} and d["Vignette"] == {"x": 1}
+    assert json.loads((pr / "SettingsUser.json").read_text())["Menu"]["ToggleKey"] == 35    # preset intact
+    core.apply_preset(cfg, saved, None)                                  # restauration : tout tel quel
+    assert json.loads((cs / "SettingsUser.json").read_text())["Vignette"] == {"x": 0}
