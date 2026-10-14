@@ -6,7 +6,9 @@ téléchargement Nexus Mods (clé d'API dans le trousseau macOS, compte Premium)
 
 - Interface : suivre le design system Socle (https://claude.ai/artifact/TkNj2Y6SQGZwT6EyME92Ah).
   `src/socle_qt.py` est régénéré par `/Volumes/SKYRIM/TOOLS/DESIGN/Socle/sync_apps.sh` : ne pas l'éditer.
-- Code : `src/core.py` (logique, sans Qt), `src/nexus.py` (API Nexus), `src/csSETTINGS.py` (interface PyQt6),
+- Code : `src/core.py` (logique, sans Qt), `src/nexus.py` (API Nexus), `src/csSETTINGS.py` (interface PyQt6, dont l'onglet
+  navigateur Nexus en QtWebEngine : profil persistant dans Application Support/csSETTINGS/web, liens nxm:// et
+  téléchargements interceptés puis importés),
   `src/i18n.py` + `src/i18n_strings.py` (fr source, en/it/es).
 - Build : `./build_app.sh` (ou `_tools/build_all.sh csSETTINGS`), identifiant `local.stephan.cspresets` (ancien nom conservé : ne pas le changer, sinon macOS redemande les autorisations).
 - Tests : `tests/` (pytest).

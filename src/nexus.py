@@ -18,6 +18,11 @@ APP_NAME = "csSETTINGS"
 APP_VERSION = "1.0.0"
 KEYCHAIN_SERVICE = "cSPRESETS Nexus API"  # nom d'origine conservé : la clé déjà rangée reste lisible
 KEYCHAIN_ACCOUNT = "apikey"
+SITE = f"https://www.nexusmods.com/games/{GAME}/mods"
+# Recherches proposées dans le navigateur intégré (la première s'ouvre par défaut)
+# Nexus cherche le mot-clé tel quel : « preset » au singulier (20 résultats) et non « presets » (1) ou
+# « settings » (0).
+SEARCHES = ["Community Shaders preset", "CS preset", "Community Shaders", "Bottled Shaders"]
 
 
 class NexusError(Exception):
@@ -79,6 +84,29 @@ def parse_mod_id(text: str) -> int:
     return int(m.group(1))
 
 
+def search_url(keyword: str, sort: str = "endorsements") -> str:
+    """Page de résultats Nexus pour un mot-clé, triée par recommandations."""
+    return f"{SITE}?{urllib.parse.urlencode({'keyword': keyword.strip(), 'sort': sort}, quote_via=urllib.parse.quote)}"
+
+
+def parse_nxm(url: str) -> dict:
+    """nxm://skyrimspecialedition/mods/<mod>/files/<fichier>?key=…&expires=… → dict.
+
+    Lien du bouton « Mod manager download » : la clé et l'échéance qu'il porte permettent le téléchargement
+    sans compte Premium."""
+    u = urllib.parse.urlparse(url)
+    m = re.fullmatch(r"/mods/(\d+)/files/(\d+)", u.path)
+    if u.scheme != "nxm" or not m:
+        raise ValueError(url)
+    q = urllib.parse.parse_qs(u.query)
+    return {"game": u.netloc.lower(), "mod_id": int(m.group(1)), "file_id": int(m.group(2)),
+            "key": q.get("key", [""])[0], "expires": q.get("expires", [""])[0]}
+
+
+def file_info(mod_id: int, file_id: int, key: str) -> dict:
+    return _get(f"/games/{GAME}/mods/{mod_id}/files/{file_id}.json", key)
+
+
 def mod_info(mod_id: int, key: str) -> dict:
     return _get(f"/games/{GAME}/mods/{mod_id}.json", key)
 
@@ -90,9 +118,13 @@ def mod_files(mod_id: int, key: str) -> list[dict]:
     return sorted(files, key=lambda f: (order.get(f.get("category_name"), 9), -(f.get("uploaded_timestamp") or 0)))
 
 
-def download(mod_id: int, file: dict, key: str, dest_dir: Path, progress=None) -> Path:
-    """Télécharge le fichier dans dest_dir et renvoie son chemin. progress(reçus, total) est appelé en cours."""
-    links = _get(f"/games/{GAME}/mods/{mod_id}/files/{file['file_id']}/download_link.json", key)
+def download(mod_id: int, file: dict, key: str, dest_dir: Path, progress=None, nxm: dict | None = None) -> Path:
+    """Télécharge le fichier dans dest_dir et renvoie son chemin. progress(reçus, total) est appelé en cours.
+    nxm : lien issu de parse_nxm (clé et échéance du site), sinon téléchargement direct (Premium)."""
+    path = f"/games/{GAME}/mods/{mod_id}/files/{file['file_id']}/download_link.json"
+    if nxm and nxm.get("key"):
+        path += "?" + urllib.parse.urlencode({"key": nxm["key"], "expires": nxm["expires"]})
+    links = _get(path, key)
     if not links:
         raise NexusError("no link")
     url = links[0]["URI"]

@@ -237,4 +237,32 @@ TR = {
         "⚠ “{name}”: features unknown to your Community Shaders, they will be ignored ({list}).",
         "⚠ «{name}»: feature sconosciute al tuo Community Shaders, saranno ignorate ({list}).",
         "⚠ «{name}»: features desconocidas para su Community Shaders, se ignorarán ({list})."),
+    # ------------------------------------------------------------ navigateur Nexus
+    "Nexus": ("Nexus", "Nexus", "Nexus"),
+    "Page précédente": ("Previous page", "Pagina precedente", "Página anterior"),
+    "Page suivante": ("Next page", "Pagina successiva", "Página siguiente"),
+    "Recharger": ("Reload", "Ricarica", "Recargar"),
+    "Rechercher sur Nexus": ("Search Nexus", "Cerca su Nexus", "Buscar en Nexus"),
+    "Ouvrir dans le navigateur": ("Open in browser", "Apri nel browser", "Abrir en el navegador"),
+    "Choisir un fichier de ce mod…": ("Choose a file from this mod…", "Scegli un file di questa mod…",
+                                      "Elegir un archivo de este mod…"),
+    "Ouvrez la page d'un preset, puis cliquez sur « Mod manager download » ou sur un téléchargement manuel : "
+    "le fichier est ajouté à la bibliothèque. Aucun réglage du jeu n'est modifié.": (
+        "Open a preset's page, then click “Mod manager download” or a manual download: the file is added to the "
+        "library. No game setting is changed.",
+        "Apri la pagina di un preset, poi clicca su «Mod manager download» o su un download manuale: il file viene "
+        "aggiunto alla libreria. Nessuna impostazione del gioco viene modificata.",
+        "Abra la página de un preset y pulse «Mod manager download» o una descarga manual: el archivo se añade a la "
+        "biblioteca. No se modifica ningún ajuste del juego."),
+    "« {f} » n'est pas une archive .ZIP, .7Z ou .RAR : téléchargement ignoré.": (
+        "“{f}” is not a .ZIP, .7Z or .RAR archive: download ignored.",
+        "«{f}» non è un archivio .ZIP, .7Z o .RAR: download ignorato.",
+        "«{f}» no es un archivo .ZIP, .7Z o .RAR: descarga ignorada."),
+    "Téléchargement interrompu.": ("Download interrupted.", "Download interrotto.", "Descarga interrumpida."),
+    "Lien de téléchargement non reconnu.": ("Download link not recognised.", "Link di download non riconosciuto.",
+                                           "Enlace de descarga no reconocido."),
+    "Ce fichier n'est pas pour Skyrim Special Edition.": ("This file is not for Skyrim Special Edition.",
+                                                         "Questo file non è per Skyrim Special Edition.",
+                                                         "Este archivo no es para Skyrim Special Edition."),
+    "Téléchargement depuis Nexus…": ("Downloading from Nexus…", "Download da Nexus…", "Descargando desde Nexus…"),
 }

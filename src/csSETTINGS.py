@@ -6,6 +6,7 @@ restaurer une sauvegarde, importer une archive ou un dossier, télécharger depu
 from __future__ import annotations
 
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -14,6 +15,8 @@ from pathlib import Path
 
 from PyQt6.QtCore import QLocale, Qt, QThread, QTimer, QUrl, pyqtSignal
 from PyQt6.QtGui import QDesktopServices
+from PyQt6.QtWebEngineCore import QWebEngineDownloadRequest, QWebEnginePage, QWebEngineProfile
+from PyQt6.QtWebEngineWidgets import QWebEngineView
 from PyQt6.QtWidgets import (QApplication, QComboBox, QDialog, QFileDialog, QFormLayout, QHBoxLayout, QHeaderView,
                              QInputDialog, QLabel, QLineEdit, QListWidget, QListWidgetItem, QMenu, QMessageBox,
                              QPlainTextEdit, QProgressBar, QPushButton, QSizePolicy, QSplitter, QTableWidget, QTableWidgetItem,
@@ -26,6 +29,7 @@ import socle_qt as S
 from i18n import L
 
 APP = "csSETTINGS"
+WEB_DIR = core.CONFIG_FILE.parent / "web"     # cookies et cache du navigateur Nexus (la connexion est gardée)
 
 
 # ------------------------------------------------------------------ utilitaires
@@ -170,7 +174,7 @@ class SettingsDialog(QDialog):
 # ------------------------------------------------------------------ Nexus
 
 class NexusDialog(QDialog):
-    def __init__(self, cfg: dict, parent=None):
+    def __init__(self, cfg: dict, parent=None, url: str = ""):
         super().__init__(parent)
         self.cfg = cfg
         self.mod_id = 0
@@ -233,6 +237,9 @@ class NexusDialog(QDialog):
         btns.addWidget(self.dl)
         lay.addLayout(btns)
         self.resize(820, 560)
+        if url:
+            self.url.setText(url)
+            QTimer.singleShot(0, self._search)
 
     def _key(self) -> str:
         key = nexus.get_key()
@@ -334,6 +341,242 @@ class NexusDialog(QDialog):
         S.status(self.state, "danger")
 
 
+# ------------------------------------------------------------------ navigateur Nexus
+
+class NexusPage(QWebEnginePage):
+    """Page qui détourne les liens nxm:// (bouton « Mod manager download ») et garde les fenêtres
+    surgissantes (connexion) dans la même vue."""
+    nxm = pyqtSignal(str)
+
+    def acceptNavigationRequest(self, url, nav_type, is_main_frame):
+        if url.scheme() == "nxm":
+            self.nxm.emit(url.toString())
+            return False
+        return super().acceptNavigationRequest(url, nav_type, is_main_frame)
+
+    def createWindow(self, _type):
+        return self
+
+    def javaScriptConsoleMessage(self, *_args):    # messages des scripts du site : sans intérêt ici
+        pass
+
+
+class NexusBrowser(QWidget):
+    """Onglet Nexus : un petit navigateur ouvert sur une recherche de presets. Un téléchargement lancé
+    depuis le site (manuel ou « Mod manager download ») est importé dans la bibliothèque."""
+    imported = pyqtSignal(list)
+
+    def __init__(self, main):
+        super().__init__()
+        self.main = main
+        self.worker = None
+        self.loaded = False
+        self.tmp = tempfile.TemporaryDirectory(prefix="cssettings_web_")
+        lay = QVBoxLayout(self)
+        lay.setContentsMargins(0, int(S.m("space-3")), 0, 0)
+        lay.setSpacing(int(S.m("space-2")))
+
+        bar = QHBoxLayout()
+        bar.setSpacing(int(S.m("space-2")))
+        self.back, self.fwd, self.reload = (QPushButton(t) for t in ("←", "→", "⟳"))
+        for b, tip in ((self.back, L("Page précédente")), (self.fwd, L("Page suivante")),
+                       (self.reload, L("Recharger"))):
+            S.variant(b, "tertiary")
+            b.setStyleSheet("font-size: 16px;")       # la feuille Socle impose 12px : flèches illisibles
+            b.setToolTip(tip)
+            b.setFixedWidth(int(S.m("size-control")))
+            bar.addWidget(b)
+        self.search = QComboBox()
+        self.search.setEditable(True)
+        self.search.addItems(nexus.SEARCHES)
+        self.search.setMinimumWidth(260)
+        self.search.lineEdit().setPlaceholderText(L("Rechercher sur Nexus"))
+        self.search.lineEdit().returnPressed.connect(self.go_search)
+        self.search.activated.connect(lambda _i: self.go_search())
+        go = QPushButton(L("Rechercher"))
+        go.clicked.connect(self.go_search)
+        self.addr = QLabel("")
+        S.role(self.addr, "path")
+        self.addr.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
+        ext = QPushButton(L("Ouvrir dans le navigateur"))
+        S.variant(ext, "tertiary")
+        ext.clicked.connect(lambda: QDesktopServices.openUrl(self.view.url()))
+        bar.addWidget(self.search)
+        bar.addWidget(go)
+        bar.addWidget(self.addr, 1)
+        bar.addWidget(ext)
+        lay.addLayout(bar)
+
+        WEB_DIR.mkdir(parents=True, exist_ok=True)
+        self.profile = QWebEngineProfile("csSETTINGS", self)
+        self.profile.setPersistentStoragePath(str(WEB_DIR))
+        self.profile.setCachePath(str(WEB_DIR / "cache"))
+        self.profile.setPersistentCookiesPolicy(QWebEngineProfile.PersistentCookiesPolicy.ForcePersistentCookies)
+        # agent Chrome standard : la mention QtWebEngine fait parfois bloquer la page par Cloudflare
+        ua = self.profile.httpUserAgent()
+        self.profile.setHttpUserAgent(" ".join(w for w in ua.split() if not w.startswith("QtWebEngine")))
+        self.profile.downloadRequested.connect(self._download)
+        self.page = NexusPage(self.profile, self)
+        self.page.nxm.connect(self._nxm)
+        self.view = QWebEngineView()
+        self.view.setPage(self.page)
+        self.view.urlChanged.connect(self._url)
+        self.view.loadFinished.connect(lambda _ok: self._nav_state())
+        self.back.clicked.connect(self.view.back)
+        self.fwd.clicked.connect(self.view.forward)
+        self.reload.clicked.connect(self.view.reload)
+        lay.addWidget(self.view, 1)
+
+        # barre contextuelle : ce qui se passe et l'action possible sur la page en cours
+        foot = QHBoxLayout()
+        foot.setSpacing(int(S.m("space-2")))
+        self.state = QLabel(L("Ouvrez la page d'un preset, puis cliquez sur « Mod manager download » ou sur un "
+                              "téléchargement manuel : le fichier est ajouté à la bibliothèque. Aucun réglage du jeu "
+                              "n'est modifié."))
+        self.state.setWordWrap(True)
+        S.role(self.state, "meta")
+        self.bar = QProgressBar()
+        self.bar.setVisible(False)
+        self.bar.setFixedWidth(180)
+        self.pick = QPushButton(L("Choisir un fichier de ce mod…"))
+        S.variant(self.pick, "primary")
+        self.pick.setVisible(False)
+        self.pick.clicked.connect(lambda: self.main.from_nexus(self.view.url().toString()))
+        foot.addWidget(self.state, 1)
+        foot.addWidget(self.bar)
+        foot.addWidget(self.pick)
+        lay.addLayout(foot)
+
+    def shutdown(self):
+        """Libère la page avant son profil (sinon Qt WebEngine se plaint à la fermeture)."""
+        self.view.setPage(None)
+        self.page.setParent(None)
+        self.page.deleteLater()
+
+    def showEvent(self, e):
+        super().showEvent(e)
+        if not self.loaded:            # la page ne se charge qu'à la première ouverture de l'onglet
+            self.loaded = True
+            self.go_search()
+
+    def go_search(self):
+        text = self.search.currentText().strip() or nexus.SEARCHES[0]
+        if text.startswith(("http://", "https://")):
+            self.view.load(QUrl(text))
+        else:
+            self.view.load(QUrl(nexus.search_url(text)))
+
+    def _url(self, url: QUrl):
+        self.addr.setText(url.toString())
+        # page d'un mod (…/mods/<numéro>) : on propose de choisir un de ses fichiers
+        self.pick.setVisible(bool(re.search(r"/mods/\d+", url.path())))
+        self._nav_state()
+
+    def _nav_state(self):
+        h = self.view.history()
+        self.back.setEnabled(h.canGoBack())
+        self.fwd.setEnabled(h.canGoForward())
+
+    def _mod_name(self) -> str:
+        title = self.view.title()
+        for sep in (" at Skyrim", " - Nexus", " | Nexus"):
+            title = title.split(sep)[0]
+        return title.strip() or "Nexus"
+
+    def _say(self, text: str, status: str = "none"):
+        self.state.setText(text)
+        S.status(self.state, status)
+
+    # téléchargement manuel depuis le site
+    def _download(self, req: QWebEngineDownloadRequest):
+        name = req.downloadFileName()
+        if Path(name).suffix.lower() not in core.ARCHIVES:
+            req.cancel()
+            self._say(L("« {f} » n'est pas une archive .ZIP, .7Z ou .RAR : téléchargement ignoré.", f=name), "warning")
+            return
+        req.setDownloadDirectory(self.tmp.name)
+        page_url, mod = self.view.url().toString(), self._mod_name()
+        req.receivedBytesChanged.connect(lambda: self._progress(req.receivedBytes(), req.totalBytes()))
+        req.isFinishedChanged.connect(lambda: self._downloaded(req, mod, page_url))
+        req.accept()
+        self.bar.setVisible(True)
+        self.bar.setRange(0, 0)
+        self._say(L("Téléchargement de {f}…", f=name))
+
+    def _progress(self, got, total):
+        if total > 0:
+            self.bar.setRange(0, total)
+            self.bar.setValue(got)
+
+    def _downloaded(self, req, mod, page_url):
+        if req.state() != QWebEngineDownloadRequest.DownloadState.DownloadCompleted:
+            self.bar.setVisible(False)
+            self._say(L("Téléchargement interrompu."), "danger")
+            return
+        path = Path(req.downloadDirectory()) / req.downloadFileName()
+        meta = {"source": "Nexus Mods", "mod": mod, "file": path.name, "url": page_url}
+        try:
+            meta["nexus_id"] = nexus.parse_mod_id(page_url)
+        except ValueError:
+            pass
+        name = core.safe_name(f"{mod} - {path.stem}")[:90]
+        cfg = self.main.cfg
+        self._run(lambda _p: core.import_source(cfg, path, name, meta))
+
+    # « Mod manager download » : lien nxm:// traité par l'API
+    def _nxm(self, link: str):
+        try:
+            info = nexus.parse_nxm(link)
+        except ValueError:
+            self._say(L("Lien de téléchargement non reconnu."), "danger")
+            return
+        if info["game"] != nexus.GAME:
+            self._say(L("Ce fichier n'est pas pour Skyrim Special Edition."), "warning")
+            return
+        key = nexus.get_key()
+        if not key:
+            self._say(L("Ajoutez d'abord votre clé d'API Nexus dans les réglages."), "warning")
+            return
+        mid, fid, cfg = info["mod_id"], info["file_id"], self.main.cfg
+
+        def job(progress):
+            mod, f = nexus.mod_info(mid, key), nexus.file_info(mid, fid, key)
+            f.setdefault("file_id", fid)
+            name = core.safe_name(f"{mod.get('name', 'Nexus')} - {f.get('name', '')}")[:90]
+            meta = {"source": "Nexus Mods", "nexus_id": mid, "mod": mod.get("name"), "author": mod.get("author"),
+                    "file": f.get("name"), "version": f.get("version"),
+                    "url": f"https://www.nexusmods.com/{nexus.GAME}/mods/{mid}"}
+            with tempfile.TemporaryDirectory(prefix="cssettings_dl_") as tmp:
+                path = nexus.download(mid, f, key, Path(tmp), progress, nxm=info)
+                return core.import_source(cfg, path, name, meta)
+
+        self.bar.setVisible(True)
+        self.bar.setRange(0, 0)
+        self._say(L("Téléchargement depuis Nexus…"))
+        self._run(job)
+
+    def _run(self, fn):
+        self.worker = Worker(fn)
+        self.worker.progress.connect(self._progress)
+        self.worker.done.connect(self._imported)
+        self.worker.failed.connect(self._fail)
+        self.worker.start()
+
+    def _imported(self, made):
+        self.bar.setVisible(False)
+        self._say(L("✓ Ajouté à la bibliothèque : {names}", names=", ".join(p.name for p in made)), "success")
+        self.imported.emit(made)
+
+    def _fail(self, err):
+        self.bar.setVisible(False)
+        if "LookupError" in err:
+            msg = L("L'archive ne contient ni SettingsUser.json ni fichier PostProcessing : ce n'est pas un preset "
+                    "Community Shaders (preset ReShade ou ENB ?).")
+        else:
+            msg = L("Échec : {err}", err=err)
+        self._say(msg, "danger")
+
+
 # ------------------------------------------------------------------ fenêtre principale
 
 class Main(QWidget):
@@ -378,6 +621,10 @@ class Main(QWidget):
         self.tabs = QTabWidget()
         self.tabs.addTab(self._presets_tab(), L("Presets"))
         self.tabs.addTab(self._backups_tab(), L("Sauvegardes"))
+        self.browser = NexusBrowser(self)
+        self.browser.imported.connect(self._web_imported)
+        self.tabs.addTab(self.browser, L("Nexus"))
+        self.tabs.setCurrentIndex(int(cfg.get("tab", 0)) % self.tabs.count())   # dernier onglet ouvert
         bl.addWidget(self.tabs, 1)
         self.log = QPlainTextEdit()
         self.log.setReadOnly(True)
@@ -414,7 +661,7 @@ class Main(QWidget):
         menu.addAction(L("Un dossier…"), self.import_folder)
         imp.setMenu(menu)
         nx = QPushButton(L("Depuis Nexus…"))
-        nx.clicked.connect(self.from_nexus)
+        nx.clicked.connect(lambda: self.tabs.setCurrentWidget(self.browser))
         save = QPushButton(L("Enregistrer la config actuelle…"))
         save.clicked.connect(self.save_current)
         row.addWidget(imp)
@@ -717,8 +964,13 @@ class Main(QWidget):
         if d:
             self._import(Path(d))
 
-    def from_nexus(self):
-        dlg = NexusDialog(self.cfg, self)
+    def _web_imported(self, made):
+        self.say(L("Ajouté depuis Nexus : {names}", names=", ".join(p.name for p in made)))
+        self.refresh(made[-1].name)
+        self._warn_imported(made)
+
+    def from_nexus(self, url: str = ""):
+        dlg = NexusDialog(self.cfg, self, url)
         dlg.exec()
         if dlg.created:
             self.say(L("Ajouté depuis Nexus : {names}", names=", ".join(p.name for p in dlg.created)))
@@ -735,6 +987,12 @@ class Main(QWidget):
             self.refresh()
             if lang_changed:
                 QMessageBox.information(self, APP, L("La nouvelle langue s'appliquera au prochain lancement."))
+
+    def closeEvent(self, e):
+        self.cfg["tab"] = self.tabs.currentIndex()
+        core.save_config(self.cfg)
+        self.browser.shutdown()
+        super().closeEvent(e)
 
     # glisser-déposer
     def dragEnterEvent(self, e):

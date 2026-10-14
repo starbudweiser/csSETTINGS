@@ -84,3 +84,18 @@ def test_compatibilite(tmp_path):
     # la référence en cache sert tant que la version de CS ne change pas
     (cs / "SettingsUser.json").write_text(json.dumps({"Post Processing": {"Film Grain": {}}}))
     assert "Film Grain" not in core.game_reference(str(cs), tmp_path / "ref.json")["pp"]
+
+def test_nexus_liens():
+    import nexus
+    i = nexus.parse_nxm("nxm://SkyrimSpecialEdition/mods/165803/files/700123?key=abc&expires=1760000000&user_id=1")
+    assert i == {"game": "skyrimspecialedition", "mod_id": 165803, "file_id": 700123, "key": "abc",
+                 "expires": "1760000000"}
+    for bad in ("https://www.nexusmods.com/x", "nxm://skyrimspecialedition/mods/1"):
+        try:
+            nexus.parse_nxm(bad); assert False
+        except ValueError:
+            pass
+    assert nexus.search_url("Community Shaders preset") == (
+        "https://www.nexusmods.com/games/skyrimspecialedition/mods?keyword=Community%20Shaders%20preset"
+        "&sort=endorsements")
+    assert nexus.parse_mod_id("https://www.nexusmods.com/skyrimspecialedition/mods/165803?tab=files") == 165803
