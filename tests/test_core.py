@@ -104,6 +104,7 @@ def test_preset_avec_enb(tmp_path):
     cs = _game(tmp_path)
     root = tmp_path                                     # racine du jeu : Data/SKSE/Plugins/CommunityShaders → 4 niveaux
     (root / "enbseries").mkdir(); (root / "enbseries" / "enbeffect.fx").write_text("ancien")
+    (root / "enbseries" / "KiLoaderSatelliteENB.dllplugin").write_text("module")
     (root / "enbseries.ini").write_text("[GLOBAL]\nUseEffect=true\n")
     cfg = {"library": str(tmp_path / "lib"), "cs_dir": str(cs), "backup_dir": str(tmp_path / "bk")}
     pr = tmp_path / "lib" / "Cine"; (pr / "ENB" / "enbseries").mkdir(parents=True)
@@ -115,6 +116,7 @@ def test_preset_avec_enb(tmp_path):
     saved = core.apply_preset(cfg, pr, "Cine")
     assert (root / "enbseries" / "enbeffect.fx").read_text() == "neuf"
     assert "neuf" in (root / "enbseries.ini").read_text()
+    assert (root / "enbseries" / "KiLoaderSatelliteENB.dllplugin").read_text() == "module"   # module KiLoader gardé
     assert not (cs / "ENB").exists() and not (cs / "LISEZMOI.md").exists() and not (cs / "Apercus").exists()
     assert (saved / "ENB" / "enbseries" / "enbeffect.fx").read_text() == "ancien"
     assert core.read_preset(saved).has_enb

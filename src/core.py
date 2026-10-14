@@ -201,6 +201,13 @@ def _apply_enb(cfg: dict, enb_src: Path, enb_saved: Path) -> None:
     for name in ENB_ITEMS:
         if (enb_src / name).exists():
             _copy(enb_src / name, root / name)
+    # modules de KiLoader (enbseries/*.dllplugin) : ils appartiennent à l'installation, pas au preset
+    old = enb_saved / "enbseries"
+    if old.is_dir():
+        (root / "enbseries").mkdir(exist_ok=True)
+        for f in old.glob("*.dllplugin"):
+            if not (root / "enbseries" / f.name).exists():
+                shutil.copy2(f, root / "enbseries" / f.name)
 
 
 def save_current(cfg: dict, name: str) -> Path:
