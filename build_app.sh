@@ -1,11 +1,11 @@
 #!/bin/bash
-# Construit csPRESETS.app à la racine du projet, signé avec le certificat stable, sans fichiers temporaires.
+# Construit csSETTINGS.app à la racine du projet, signé avec le certificat stable, sans fichiers temporaires.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SRC="$ROOT/src/csPRESETS.py"
-APP_NAME="csPRESETS"
-TMP="$(mktemp -d "${TMPDIR:-/tmp}/cspresets_build.XXXXXX")"
+SRC="$ROOT/src/csSETTINGS.py"
+APP_NAME="csSETTINGS"
+TMP="$(mktemp -d "${TMPDIR:-/tmp}/cssettings_build.XXXXXX")"
 
 cleanup() { rm -rf "$TMP" "$ROOT/build" "$ROOT/$APP_NAME.spec" "$ROOT/src/__pycache__"; }
 trap cleanup EXIT

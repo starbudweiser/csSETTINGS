@@ -15,7 +15,7 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
-CONFIG_FILE = Path.home() / "Library" / "Application Support" / "csPRESETS" / "config.json"
+CONFIG_FILE = Path.home() / "Library" / "Application Support" / "csSETTINGS" / "config.json"
 DEFAULTS = {
     "library": "/Volumes/SKYRIM/MODS COLLECTION/_SHADERS/CS PRESETS",
     "cs_dir": "/Volumes/SAMSUNG T7/VIRTUAL MACHINES/Crossover/Skyrim-MetalFX/drive_c/Games/"
@@ -340,7 +340,7 @@ def find_roots(tree: Path) -> list[Path]:
 def import_source(cfg: dict, source: Path, name: str, meta: dict | None = None) -> list[Path]:
     """Ajoute un ou plusieurs presets depuis une archive ou un dossier. Renvoie les dossiers créés."""
     source = Path(source)
-    with tempfile.TemporaryDirectory(prefix="cspresets_") as tmp:
+    with tempfile.TemporaryDirectory(prefix="cssettings_") as tmp:
         tree = Path(tmp) / "x"
         tree.mkdir()
         if source.is_file() and source.suffix.lower() in ARCHIVES:

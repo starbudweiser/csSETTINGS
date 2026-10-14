@@ -1,4 +1,4 @@
-"""csPRESETS : sélecteur de presets Community Shaders pour Skyrim (bouteille CrossOver).
+"""csSETTINGS : sélecteur de presets Community Shaders pour Skyrim (bouteille CrossOver).
 
 Choisir un preset, l'appliquer en un clic (la configuration en place est sauvegardée avant),
 restaurer une sauvegarde, importer une archive ou un dossier, télécharger depuis Nexus Mods.
@@ -25,7 +25,7 @@ import nexus
 import socle_qt as S
 from i18n import L
 
-APP = "csPRESETS"
+APP = "csSETTINGS"
 
 
 # ------------------------------------------------------------------ utilitaires
@@ -290,7 +290,7 @@ class NexusDialog(QDialog):
         cfg = self.cfg
 
         def job(progress):
-            with tempfile.TemporaryDirectory(prefix="cspresets_dl_") as tmp:
+            with tempfile.TemporaryDirectory(prefix="cssettings_dl_") as tmp:
                 path = nexus.download(mid, f, key, Path(tmp), progress)
                 return core.import_source(cfg, path, name, meta)
 
