@@ -275,4 +275,12 @@ TR = {
         "<b>Preset ENB (Effects 11)</b>: reemplaza enbseries.ini y la carpeta enbseries en la carpeta del juego. "
         "Los actuales se mueven a la copia de seguridad; no se borra nada."),
     "+ ENB": ("+ ENB", "+ ENB", "+ ENB"),
+    # ------------------------------------------------------------ taille des textes
+    "Réduire les textes (⌥− ou ⌘−)": ("Smaller text (⌥− or ⌘−)", "Testo più piccolo (⌥− o ⌘−)",
+                                     "Texto más pequeño (⌥− o ⌘−)"),
+    "Agrandir les textes (⌥+ ou ⌘+)": ("Larger text (⌥+ or ⌘+)", "Testo più grande (⌥+ o ⌘+)",
+                                      "Texto más grande (⌥+ o ⌘+)"),
+    "Taille des textes (⌥0 ou ⌘0 : taille par défaut)": ("Text size (⌥0 or ⌘0: default size)",
+                                                          "Dimensione del testo (⌥0 o ⌘0: predefinita)",
+                                                          "Tamaño del texto (⌥0 o ⌘0: tamaño predeterminado)"),
 }
