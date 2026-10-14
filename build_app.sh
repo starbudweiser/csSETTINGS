@@ -1,10 +1,10 @@
 #!/bin/bash
-# Construit cSPRESETS.app à la racine du projet, signé avec le certificat stable, sans fichiers temporaires.
+# Construit csPRESETS.app à la racine du projet, signé avec le certificat stable, sans fichiers temporaires.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SRC="$ROOT/src/cSPRESETS.py"
-APP_NAME="cSPRESETS"
+SRC="$ROOT/src/csPRESETS.py"
+APP_NAME="csPRESETS"
 TMP="$(mktemp -d "${TMPDIR:-/tmp}/cspresets_build.XXXXXX")"
 
 cleanup() { rm -rf "$TMP" "$ROOT/build" "$ROOT/$APP_NAME.spec" "$ROOT/src/__pycache__"; }

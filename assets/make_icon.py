@@ -1,4 +1,4 @@
-"""Dessine l'icône de cSPRESETS (1024 px, aplats Socle, sans ombre) puis produit icon.icns avec iconutil."""
+"""Dessine l'icône de csPRESETS (1024 px, aplats Socle, sans ombre) puis produit icon.icns avec iconutil."""
 import os, subprocess, sys, tempfile
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 from PyQt6.QtCore import QRectF, Qt

@@ -1,4 +1,4 @@
-"""cSPRESETS : sélecteur de presets Community Shaders pour Skyrim (bouteille CrossOver).
+"""csPRESETS : sélecteur de presets Community Shaders pour Skyrim (bouteille CrossOver).
 
 Choisir un preset, l'appliquer en un clic (la configuration en place est sauvegardée avant),
 restaurer une sauvegarde, importer une archive ou un dossier, télécharger depuis Nexus Mods.
@@ -25,7 +25,7 @@ import nexus
 import socle_qt as S
 from i18n import L
 
-APP = "cSPRESETS"
+APP = "csPRESETS"
 
 
 # ------------------------------------------------------------------ utilitaires

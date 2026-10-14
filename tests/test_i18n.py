@@ -6,7 +6,7 @@ from i18n_strings import TR  # noqa: E402
 
 def _keys():
     out = set()
-    for n in ast.walk(ast.parse((SRC / "cSPRESETS.py").read_text(encoding="utf-8"))):
+    for n in ast.walk(ast.parse((SRC / "csPRESETS.py").read_text(encoding="utf-8"))):
         if isinstance(n, ast.Call) and getattr(n.func, "id", None) == "L" and n.args and isinstance(n.args[0], ast.Constant):
             out.add(n.args[0].value)
     return out

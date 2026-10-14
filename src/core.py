@@ -15,7 +15,7 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
-CONFIG_FILE = Path.home() / "Library" / "Application Support" / "cSPRESETS" / "config.json"
+CONFIG_FILE = Path.home() / "Library" / "Application Support" / "csPRESETS" / "config.json"
 DEFAULTS = {
     "library": "/Volumes/SKYRIM/MODS COLLECTION/_SHADERS/CS PRESETS",
     "cs_dir": "/Volumes/SAMSUNG T7/VIRTUAL MACHINES/Crossover/Skyrim-MetalFX/drive_c/Games/"

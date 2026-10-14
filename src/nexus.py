@@ -14,9 +14,9 @@ from pathlib import Path
 
 API = "https://api.nexusmods.com/v1"
 GAME = "skyrimspecialedition"
-APP_NAME = "cSPRESETS"
+APP_NAME = "csPRESETS"
 APP_VERSION = "1.0.0"
-KEYCHAIN_SERVICE = "cSPRESETS Nexus API"
+KEYCHAIN_SERVICE = "cSPRESETS Nexus API"  # nom d'origine conservé : la clé déjà rangée reste lisible
 KEYCHAIN_ACCOUNT = "apikey"
 
 
