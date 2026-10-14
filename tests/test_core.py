@@ -1,0 +1,86 @@
+import json, sys, zipfile
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
+import core  # noqa: E402
+
+def _cfg(tmp):
+    cs = tmp / "CommunityShaders"; (cs / "PostProcessing").mkdir(parents=True)
+    (cs / "SettingsUser.json").write_text(json.dumps({"Version": "1-9-0-0", "x": 1}))
+    (cs / "PostProcessing" / "mine.json").write_text("{}")
+    (cs / "Weathers").mkdir(); (cs / "Weathers" / "old.json").write_text("{}")
+    return {"library": str(tmp / "lib"), "cs_dir": str(cs), "backup_dir": str(tmp / "bk")}
+
+def test_import_zip_mo2_et_apply(tmp_path):
+    cfg = _cfg(tmp_path)
+    z = tmp_path / "p.zip"
+    with zipfile.ZipFile(z, "w") as f:
+        f.writestr("SKSE/Plugins/CommunityShaders/SettingsUser.json", json.dumps({"Version": "1-8-0-0", "x": 2}))
+        f.writestr("SKSE/Plugins/CommunityShaders/PostProcessing/theirs.json", "{}")
+        f.writestr("SKSE/Plugins/CommunityShaders/UnifiedWaterCache/cache.bin", "x")
+    made = core.import_source(cfg, z, "Test")
+    assert [p.name for p in made] == ["Test"]
+    p = core.read_preset(made[0])
+    assert p.has_settings and p.version == "1.8.0.0" and p.pp_files == ["theirs.json"]
+    assert not (made[0] / "UnifiedWaterCache").exists()
+    saved = core.apply_preset(cfg, made[0], "Test")
+    cs = Path(cfg["cs_dir"])
+    assert json.loads((cs / "SettingsUser.json").read_text())["x"] == 2
+    assert (cs / "PostProcessing" / "mine.json").exists() and (cs / "PostProcessing" / "theirs.json").exists()
+    assert not (cs / "Weathers").exists()                     # données d'éditeur du preset précédent retirées
+    assert json.loads((saved / "SettingsUser.json").read_text())["x"] == 1   # sauvegarde avant application
+    assert (saved / "Weathers" / "old.json").exists()
+    assert core.active_preset(cfg["library"]) == "Test"
+
+def test_preset_post_traitement_seul(tmp_path):
+    cfg = _cfg(tmp_path)
+    d = tmp_path / "src" / "PostProcessing"; d.mkdir(parents=True); (d / "pp.json").write_text("{}")
+    made = core.import_source(cfg, tmp_path / "src", "PP")
+    core.apply_preset(cfg, made[0], "PP")
+    cs = Path(cfg["cs_dir"])
+    assert json.loads((cs / "SettingsUser.json").read_text())["x"] == 1   # réglages inchangés
+    assert (cs / "PostProcessing" / "pp.json").exists() and (cs / "Weathers").exists()
+
+def test_archive_sans_preset(tmp_path):
+    cfg = _cfg(tmp_path)
+    z = tmp_path / "r.zip"
+    with zipfile.ZipFile(z, "w") as f:
+        f.writestr("reshade-presets/x.ini", "[x]")
+    try:
+        core.import_source(cfg, z, "R"); assert False
+    except LookupError:
+        pass
+
+def _game(tmp):
+    """Arborescence Data minimale : CS installé avec deux features."""
+    cs = tmp / "Data" / "SKSE" / "Plugins" / "CommunityShaders"; cs.mkdir(parents=True)
+    feats = tmp / "Data" / "Shaders" / "Features"; feats.mkdir(parents=True)
+    for f in ("ScreenSpaceGI", "Skin", "PostProcessing"):
+        (feats / f"{f}.ini").write_text("[Info]\nVersion = 1-0-0\n")
+    (cs / "SettingsDefault.json").write_text(json.dumps({
+        "Version": "1-9-0-0", "General": {"Enable Shaders": True},
+        "Screen Space GI": {"AOPower": 1}, "Advanced Skin": {"F0": 1}, "Post Processing": {"ppsettings": {}}}))
+    # SettingsUser du jeu « pollué » par un preset incompatible : la section inconnue ne doit pas compter
+    (cs / "SettingsUser.json").write_text(json.dumps({
+        "Version": "1-9-0-0", "Physical Sky": {"x": 1}, "Post Processing": {"Vignette": {}, "LUT": {}}}))
+    return cs
+
+def test_compatibilite(tmp_path):
+    cs = _game(tmp_path)
+    ref = core.game_reference(str(cs), tmp_path / "ref.json")
+    assert ref["version"] == "1.9.0.0" and "Physical Sky" not in ref["sections"]
+    ok = tmp_path / "ok"; ok.mkdir()
+    (ok / "SettingsUser.json").write_text(json.dumps({"Version": "1-9-0-0", "Screen Space GI": {"AOPower": 2},
+                                                      "Advanced Skin": {"F0": 1}, "Post Processing": {}}))
+    assert core.check_preset(ok, ref).level == "ok"
+    bad = tmp_path / "bad"; (bad / "PostProcessing").mkdir(parents=True)
+    (bad / "SettingsUser.json").write_text(json.dumps({
+        "Version": "1-8-0-0", "Physical Sky": {}, "Screen Space GI": {"AOPower": 2, "EnableREBLUR": True},
+        "Disable at Boot": {"ScreenSpaceGI": False, "XeGTAO": False}}))
+    (bad / "PostProcessing" / "p.json").write_text(json.dumps({"Vignette": {}, "Film Grain": {}, "preset_name": "p"}))
+    c = core.check_preset(bad, ref)
+    assert c.level == "warning"
+    assert c.unknown_features == ["Physical Sky", "XeGTAO"]
+    assert c.missing_features == ["Advanced Skin", "Post Processing"] and c.unknown_options == 1 and c.unknown_pp == ["Film Grain"]
+    # la référence en cache sert tant que la version de CS ne change pas
+    (cs / "SettingsUser.json").write_text(json.dumps({"Post Processing": {"Film Grain": {}}}))
+    assert "Film Grain" not in core.game_reference(str(cs), tmp_path / "ref.json")["pp"]
