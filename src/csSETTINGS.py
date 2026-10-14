@@ -31,9 +31,6 @@ from i18n import L
 APP = "csSETTINGS"
 WEB_DIR = core.CONFIG_FILE.parent / "web"     # cookies et cache du navigateur Nexus (la connexion est gardée)
 
-# Taille des textes (zoom Socle, socle_qt.Zoom) : 1,25 par défaut, le corps passe de 12 à 15 px.
-ZOOM_DEFAULT = 1.25
-
 
 # ------------------------------------------------------------------ utilitaires
 
@@ -423,7 +420,7 @@ class NexusBrowser(QWidget):
         self.page.nxm.connect(self._nxm)
         self.view = QWebEngineView()
         self.view.setPage(self.page)
-        self.view.setZoomFactor(float(main.cfg.get("zoom", ZOOM_DEFAULT)))
+        self.view.setZoomFactor(S.scale())      # même échelle que l'interface (Socle, 110 %)
         self.view.urlChanged.connect(self._url)
         self.view.loadFinished.connect(lambda _ok: self._nav_state())
         self.back.clicked.connect(self.view.back)
@@ -610,15 +607,10 @@ class Main(QWidget):
         gear = QPushButton(L("Réglages"))
         S.variant(gear, "tertiary")
         gear.clicked.connect(self.settings)
-        # ⌥/⌘ + − 0 et boutons A− A+ (Socle)
-        self.zoom = S.Zoom(self, default=ZOOM_DEFAULT)
-        self.zoom.changed.connect(self._zoom_changed)
         hb.addWidget(t)
         hb.addWidget(sub)
         hb.addStretch(1)
         hb.addWidget(self.game)
-        hb.addWidget(self.zoom.controls(L("Réduire les textes (⌥− ou ⌘−)"), L("Agrandir les textes (⌥+ ou ⌘+)"),
-                                        L("Taille des textes (⌥0 ou ⌘0 : taille par défaut)")))
         hb.addWidget(gear)
         root.addWidget(bar)
 
@@ -890,11 +882,6 @@ class Main(QWidget):
         self.btn_apply.setEnabled(self._cur() is not None and not running)
         return running
 
-    def _zoom_changed(self, value: float):
-        self.cfg["zoom"] = value
-        core.save_config(self.cfg)
-        self.browser.view.setZoomFactor(value)
-
     def say(self, text: str):
         self.log.appendPlainText(time.strftime("%H:%M:%S  ") + text)
 
@@ -1040,7 +1027,6 @@ def main():
     app = QApplication(sys.argv)
     app.setApplicationName(APP)
     S.apply(app, "dark")
-    S.set_scale(app, float(cfg.get("zoom", ZOOM_DEFAULT)))
     Path(cfg["library"]).mkdir(parents=True, exist_ok=True) if os.path.isdir(os.path.dirname(cfg["library"])) else None
     w = Main(cfg)
     w.show()
