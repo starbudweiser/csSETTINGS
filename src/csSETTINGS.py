@@ -13,7 +13,7 @@ import tempfile
 import time
 from pathlib import Path
 
-from PyQt6.QtCore import QLocale, Qt, QThread, QTimer, QUrl, pyqtSignal
+from PyQt6.QtCore import QLocale, QPoint, Qt, QThread, QTimer, QUrl, pyqtSignal
 from PyQt6.QtGui import QDesktopServices
 from PyQt6.QtWebEngineCore import QWebEngineDownloadRequest, QWebEnginePage, QWebEngineProfile
 from PyQt6.QtWebEngineWidgets import QWebEngineView
@@ -663,12 +663,18 @@ class Main(QWidget):
         self.list.currentRowChanged.connect(self._show)
         self.list.itemDoubleClicked.connect(lambda _i: self.apply())
         ll.addWidget(self.list, 1)
+        hint = QLabel(L("Vous pouvez aussi glisser-déposer une archive ou un dossier sur la fenêtre."))
+        S.role(hint, "subtle")
+        hint.setWordWrap(True)
+        ll.addWidget(hint)
         row = QHBoxLayout()
+        row.setSpacing(int(S.m("space-2")))
         imp = QPushButton(L("Importer…"))
         menu = QMenu(imp)
         menu.addAction(L("Une archive (.ZIP, .7Z, .RAR)…"), self.import_archive)
         menu.addAction(L("Un dossier…"), self.import_folder)
-        imp.setMenu(menu)
+        # menu ouvert à la main : pas d'indicateur de menu Qt, qui décentrait le libellé
+        imp.clicked.connect(lambda: menu.exec(imp.mapToGlobal(QPoint(0, imp.height() + 2))))
         nx = QPushButton(L("Depuis Nexus…"))
         nx.clicked.connect(lambda: self.tabs.setCurrentWidget(self.browser))
         save = QPushButton(L("Enregistrer la config actuelle…"))
@@ -676,11 +682,8 @@ class Main(QWidget):
         row.addWidget(imp)
         row.addWidget(nx)
         row.addWidget(save)
+        row.addStretch(1)
         ll.addLayout(row)
-        hint = QLabel(L("Vous pouvez aussi glisser-déposer une archive ou un dossier sur la fenêtre."))
-        S.role(hint, "subtle")
-        hint.setWordWrap(True)
-        ll.addWidget(hint)
 
         right = QWidget()
         rl = QVBoxLayout(right)
@@ -719,8 +722,13 @@ class Main(QWidget):
         self.btn_remove.clicked.connect(self.remove)
         self.btn_apply = QPushButton(L("Appliquer ce preset"))
         S.variant(self.btn_apply, "action")
-        self.btn_apply.setMinimumHeight(int(S.m("size-control-lg")))
         self.btn_apply.clicked.connect(self.apply)
+        brow.setSpacing(int(S.m("space-2")))
+        # les deux rangées du bas ont la même hauteur (size-control-lg) et finissent à la même ligne ;
+        # le bouton ambre reste le seul en couleur, sans la hauteur « barre latérale » (size-cta) de Socle
+        h = int(S.m("size-control-lg")) - 2
+        for b in (imp, nx, save, self.btn_reveal, self.btn_remove, self.btn_apply):
+            b.setStyleSheet(f"QPushButton {{ min-height: {h}px; max-height: {h}px; }}")
         brow.addWidget(self.btn_reveal)
         brow.addWidget(self.btn_remove)
         brow.addStretch(1)
