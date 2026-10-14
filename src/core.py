@@ -317,6 +317,7 @@ class Compat:
     # une chaîne vide au lancement) : raisons parmi composite (étape absente), unknown (effets), version
     pp_rejected: list[str] = field(default_factory=list)
     preset_version: str = ""
+    frame_gen: bool = False          # force la Frame Generation : son proxy D3D12 plante le jeu sous CrossOver
 
 
 PP_META = {"ppsettings", "preset_name"}     # réglages globaux du bloc, pas des étapes de la chaîne
@@ -353,6 +354,8 @@ def check_preset(preset_path: Path, ref: dict) -> Compat:
         c.missing_features = [k for k in sections if k not in settings and k not in CORE_SECTIONS
                               and _feature_known(k, features)]
         c.preset_version = str(settings.get("Version", "")).replace("-", ".")
+        up = settings.get("Upscaling")
+        c.frame_gen = isinstance(up, dict) and bool(up.get("frameGenerationForceEnable"))
         pp = settings.get("Post Processing")
         if isinstance(pp, dict):
             c.unknown_pp += [k for k in pp if k not in pp_known]
@@ -369,7 +372,7 @@ def check_preset(preset_path: Path, ref: dict) -> Compat:
     if pp_dir.is_dir():
         for f in sorted(pp_dir.glob("*.json")):
             c.unknown_pp += [k for k in _read_json(f) if k not in pp_known and k not in c.unknown_pp]
-    if c.unknown_features or c.unknown_pp or c.pp_rejected:
+    if c.unknown_features or c.unknown_pp or c.pp_rejected or c.frame_gen:
         c.level = "warning"
     elif c.missing_features or c.unknown_options:
         c.level = "info"

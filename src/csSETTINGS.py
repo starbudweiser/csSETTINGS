@@ -854,6 +854,10 @@ class Main(QWidget):
                                "ignorées ; le rendu peut différer des captures du preset (autre variante de CS, "
                                "comme Jiaye AIO ou Open Shader ?).", v=self.ref.get("version", ""),
                                list=", ".join(c.unknown_features)))
+            if c.frame_gen:
+                parts.append(L("<b>⚠ Frame Generation forcée</b> : le preset l'active, et sous CrossOver elle fait "
+                               "planter le jeu au lancement. Désactivez-la en jeu (Upscaling) ou dans le "
+                               "SettingsUser.json du preset (frameGenerationForceEnable à 0)."))
             if c.pp_rejected:
                 parts.append(L("<b>⚠ Post-traitement du preset ignoré</b> : votre Community Shaders {v} rejettera "
                                "sa chaîne de post-traitement ({why}) et la remplacera par une chaîne vide. Ni "
@@ -905,6 +909,11 @@ class Main(QWidget):
         if not p or self._game_state():
             return
         c = self.compats.get(p.name)
+        if c and c.frame_gen and QMessageBox.question(
+                self, APP, L("« {name} » force la Frame Generation de Community Shaders, qui fait planter le jeu "
+                             "sous CrossOver. Appliquer quand même ? La configuration en place est sauvegardée "
+                             "avant.", name=p.name)) != QMessageBox.StandardButton.Yes:
+            return
         if c and c.pp_rejected and QMessageBox.question(
                 self, APP, L("Le post-traitement de « {name} » sera ignoré : votre Community Shaders {v} rejettera "
                              "sa chaîne ({why}) et la remplacera par une chaîne vide. Appliquer quand même ? La "
@@ -984,6 +993,9 @@ class Main(QWidget):
     def _warn_imported(self, made):
         for path in made:
             c = self.compats.get(path.name)
+            if c and c.frame_gen:
+                self.say(L("⚠ « {name} » force la Frame Generation : le jeu plantera sous CrossOver.",
+                           name=path.name))
             if c and c.pp_rejected:
                 self.say(L("⚠ « {name} » : post-traitement ignoré par votre Community Shaders ({why}).",
                            name=path.name, why=self._pp_why(c)))

@@ -142,3 +142,14 @@ def test_preset_avec_enb(tmp_path):
     assert (root / "enbseries" / "enbeffect.fx").read_text() == "ancien"
     assert (saved / "ENB" / "enbseries" / "enbeffect.fx").read_text() == "ancien"   # sauvegarde intacte
     assert (second / "ENB" / "enbseries" / "enbeffect.fx").read_text() == "neuf"
+
+def test_frame_generation_forcee(tmp_path):
+    """frameGenerationForceEnable fait planter le jeu sous CrossOver (proxy D3D12, E_NOINTERFACE)."""
+    ref = {"version": "1.9.0.0", "features": ["upscaling"], "sections": {"Upscaling": ["frameGenerationForceEnable"]},
+           "pp": []}
+    for force, attendu in ((1, True), (0, False)):
+        d = tmp_path / str(force); d.mkdir()
+        (d / "SettingsUser.json").write_text(json.dumps({"Version": "1-9-0-0",
+                                                         "Upscaling": {"frameGenerationForceEnable": force}}))
+        c = core.check_preset(d, ref)
+        assert c.frame_gen is attendu and (c.level == "warning") is attendu

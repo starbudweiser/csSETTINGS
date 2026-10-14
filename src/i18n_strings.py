@@ -221,6 +221,27 @@ TR = {
         "<b>⚠ Posprocesado del preset ignorado</b>: su Community Shaders {v} rechazará su cadena de posprocesado "
         "({why}) y la sustituirá por una cadena vacía. Ni la gradación ni los efectos del preset se mostrarán: "
         "rehaga la cadena en el juego o use una versión del preset hecha para CS {v}."),
+    "<b>⚠ Frame Generation forcée</b> : le preset l'active, et sous CrossOver elle fait planter le jeu au lancement. "
+    "Désactivez-la en jeu (Upscaling) ou dans le SettingsUser.json du preset (frameGenerationForceEnable à 0).": (
+        "<b>⚠ Forced Frame Generation</b>: the preset turns it on, and under CrossOver it crashes the game at launch. "
+        "Turn it off in game (Upscaling) or in the preset's SettingsUser.json (frameGenerationForceEnable to 0).",
+        "<b>⚠ Frame Generation forzata</b>: il preset la attiva, e con CrossOver fa crashare il gioco all'avvio. "
+        "Disattivala nel gioco (Upscaling) o nel SettingsUser.json del preset (frameGenerationForceEnable a 0).",
+        "<b>⚠ Frame Generation forzada</b>: el preset la activa, y con CrossOver hace que el juego se cierre al "
+        "iniciar. Desactívela en el juego (Upscaling) o en el SettingsUser.json del preset "
+        "(frameGenerationForceEnable a 0)."),
+    "« {name} » force la Frame Generation de Community Shaders, qui fait planter le jeu sous CrossOver. Appliquer "
+    "quand même ? La configuration en place est sauvegardée avant.": (
+        "“{name}” forces Community Shaders' Frame Generation, which crashes the game under CrossOver. Apply anyway? "
+        "The current configuration is backed up first.",
+        "«{name}» forza la Frame Generation di Community Shaders, che fa crashare il gioco con CrossOver. Applicare "
+        "comunque? La configurazione attuale viene salvata prima.",
+        "«{name}» fuerza la Frame Generation de Community Shaders, que hace que el juego se cierre con CrossOver. "
+        "¿Aplicar de todos modos? La configuración actual se guarda antes."),
+    "⚠ « {name} » force la Frame Generation : le jeu plantera sous CrossOver.": (
+        "⚠ “{name}” forces Frame Generation: the game will crash under CrossOver.",
+        "⚠ «{name}» forza la Frame Generation: il gioco crasherà con CrossOver.",
+        "⚠ «{name}» fuerza la Frame Generation: el juego se cerrará con CrossOver."),
     "étape Composite absente": ("Composite step missing", "passaggio Composite assente", "falta el paso Composite"),
     "effets inconnus : {list}": ("unknown effects: {list}", "effetti sconosciuti: {list}",
                                  "efectos desconocidos: {list}"),
