@@ -14,7 +14,7 @@ import time
 from pathlib import Path
 
 from PyQt6.QtCore import QLocale, Qt, QThread, QTimer, QUrl, pyqtSignal
-from PyQt6.QtGui import QDesktopServices, QKeySequence, QShortcut
+from PyQt6.QtGui import QDesktopServices
 from PyQt6.QtWebEngineCore import QWebEngineDownloadRequest, QWebEnginePage, QWebEngineProfile
 from PyQt6.QtWebEngineWidgets import QWebEngineView
 from PyQt6.QtWidgets import (QApplication, QComboBox, QDialog, QFileDialog, QFormLayout, QHBoxLayout, QHeaderView,
@@ -31,17 +31,8 @@ from i18n import L
 APP = "csSETTINGS"
 WEB_DIR = core.CONFIG_FILE.parent / "web"     # cookies et cache du navigateur Nexus (la connexion est gardée)
 
-# Taille des textes : Socle fixe ses tailles en pixels dans sa feuille QSS ; on les met à l'échelle puis on
-# régénère la feuille (socle_qt.py reste intact). 1,25 par défaut : le corps passe de 12 à 15 px.
-ZOOM_STEPS = (0.9, 1.0, 1.1, 1.25, 1.4, 1.6, 1.8, 2.0)
+# Taille des textes (zoom Socle, socle_qt.Zoom) : 1,25 par défaut, le corps passe de 12 à 15 px.
 ZOOM_DEFAULT = 1.25
-_BASE_TYPE = {k: v["size"] for k, v in S.TOKENS["type"].items()}
-
-
-def apply_zoom(app: QApplication, scale: float) -> None:
-    for k, size in _BASE_TYPE.items():
-        S.TOKENS["type"][k]["size"] = max(8, round(size * scale))
-    S.apply(app, "dark")
 
 
 # ------------------------------------------------------------------ utilitaires
@@ -619,27 +610,16 @@ class Main(QWidget):
         gear = QPushButton(L("Réglages"))
         S.variant(gear, "tertiary")
         gear.clicked.connect(self.settings)
-        smaller, bigger = QPushButton("A−"), QPushButton("A+")
-        for b, tip, step in ((smaller, L("Réduire les textes (⌥− ou ⌘−)"), -1),
-                             (bigger, L("Agrandir les textes (⌥+ ou ⌘+)"), 1)):
-            S.variant(b, "tertiary")
-            b.setToolTip(tip)
-            b.clicked.connect(lambda _=False, st=step: self.zoom(st))
-        self.zoom_label = QLabel("")
-        S.role(self.zoom_label, "meta")
-        self.zoom_label.setToolTip(L("Taille des textes (⌥0 ou ⌘0 : taille par défaut)"))
+        # ⌥/⌘ + − 0 et boutons A− A+ (Socle)
+        self.zoom = S.Zoom(self, default=ZOOM_DEFAULT)
+        self.zoom.changed.connect(self._zoom_changed)
         hb.addWidget(t)
         hb.addWidget(sub)
         hb.addStretch(1)
         hb.addWidget(self.game)
-        hb.addWidget(smaller)
-        hb.addWidget(self.zoom_label)
-        hb.addWidget(bigger)
+        hb.addWidget(self.zoom.controls(L("Réduire les textes (⌥− ou ⌘−)"), L("Agrandir les textes (⌥+ ou ⌘+)"),
+                                        L("Taille des textes (⌥0 ou ⌘0 : taille par défaut)")))
         hb.addWidget(gear)
-        # ⌥ comme demandé, ⌘ comme dans les applis macOS ; « = » pour le + sans Maj
-        for mod in ("Alt", "Ctrl"):      # Qt traduit Ctrl en ⌘ sur macOS
-            for key, step in (("+", 1), ("=", 1), ("-", -1), ("0", 0)):
-                QShortcut(QKeySequence(f"{mod}+{key}"), self, activated=lambda st=step: self.zoom(st))
         root.addWidget(bar)
 
         body = QWidget()
@@ -662,7 +642,6 @@ class Main(QWidget):
         bl.addWidget(self.log)
         root.addWidget(body, 1)
 
-        self._zoom_text()
         self.timer = QTimer(self)
         self.timer.timeout.connect(self._game_state)
         self.timer.start(3000)
@@ -903,24 +882,10 @@ class Main(QWidget):
         self.btn_apply.setEnabled(self._cur() is not None and not running)
         return running
 
-    def zoom(self, step: int):
-        """step : +1 / -1 d'un cran, 0 = taille par défaut. Mémorisé dans la config."""
-        cur = float(self.cfg.get("zoom", ZOOM_DEFAULT))
-        if step == 0:
-            new = ZOOM_DEFAULT
-        else:
-            i = min(range(len(ZOOM_STEPS)), key=lambda j: abs(ZOOM_STEPS[j] - cur))
-            new = ZOOM_STEPS[max(0, min(len(ZOOM_STEPS) - 1, i + step))]
-        if new == cur:
-            return
-        self.cfg["zoom"] = new
+    def _zoom_changed(self, value: float):
+        self.cfg["zoom"] = value
         core.save_config(self.cfg)
-        apply_zoom(QApplication.instance(), new)
-        self.browser.view.setZoomFactor(new)
-        self._zoom_text()
-
-    def _zoom_text(self):
-        self.zoom_label.setText(f"{round(float(self.cfg.get('zoom', ZOOM_DEFAULT)) * 100)} %")
+        self.browser.view.setZoomFactor(value)
 
     def say(self, text: str):
         self.log.appendPlainText(time.strftime("%H:%M:%S  ") + text)
@@ -1066,7 +1031,8 @@ def main():
     i18n.set_lang(i18n.system_lang(QLocale.system().uiLanguages(), "fr") if lang == "auto" else lang)
     app = QApplication(sys.argv)
     app.setApplicationName(APP)
-    apply_zoom(app, float(cfg.get("zoom", ZOOM_DEFAULT)))
+    S.apply(app, "dark")
+    S.set_scale(app, float(cfg.get("zoom", ZOOM_DEFAULT)))
     Path(cfg["library"]).mkdir(parents=True, exist_ok=True) if os.path.isdir(os.path.dirname(cfg["library"])) else None
     w = Main(cfg)
     w.show()
