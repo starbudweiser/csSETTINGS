@@ -854,7 +854,13 @@ class Main(QWidget):
                                "ignorées ; le rendu peut différer des captures du preset (autre variante de CS, "
                                "comme Jiaye AIO ou Open Shader ?).", v=self.ref.get("version", ""),
                                list=", ".join(c.unknown_features)))
-            if c.unknown_pp:
+            if c.pp_rejected:
+                parts.append(L("<b>⚠ Post-traitement du preset ignoré</b> : votre Community Shaders {v} rejettera "
+                               "sa chaîne de post-traitement ({why}) et la remplacera par une chaîne vide. Ni "
+                               "l'étalonnage ni les effets du preset ne seront rendus : refaites la chaîne en jeu "
+                               "ou prenez une version du preset faite pour CS {v}.", v=self.ref.get("version", ""),
+                               why=self._pp_why(c)))
+            elif c.unknown_pp:
                 parts.append(L("<b>⚠ Effets de post-traitement inconnus</b> : {list}. Ils seront ignorés.",
                                list=", ".join(c.unknown_pp)))
             if c.missing_features:
@@ -875,6 +881,14 @@ class Main(QWidget):
         self.compat.setText(text)
         self.compat.setVisible(True)
 
+    @staticmethod
+    def _pp_why(c) -> str:
+        """Raisons du rejet de la chaîne de post-traitement (core.Compat.pp_rejected), en clair."""
+        why = {"composite": L("étape Composite absente"),
+               "unknown": L("effets inconnus : {list}", list=", ".join(c.unknown_pp)),
+               "version": L("preset fait pour CS {pv}", pv=c.preset_version)}
+        return " ; ".join(why[r] for r in c.pp_rejected)
+
     def _game_state(self):
         running = core.game_running()
         self.game.setText(L("⚠ Jeu lancé : fermez-le avant d'appliquer") if running else L("Jeu fermé"))
@@ -891,7 +905,14 @@ class Main(QWidget):
         if not p or self._game_state():
             return
         c = self.compats.get(p.name)
-        if c and c.level == "warning" and QMessageBox.question(
+        if c and c.pp_rejected and QMessageBox.question(
+                self, APP, L("Le post-traitement de « {name} » sera ignoré : votre Community Shaders {v} rejettera "
+                             "sa chaîne ({why}) et la remplacera par une chaîne vide. Appliquer quand même ? La "
+                             "configuration en place est sauvegardée avant.", name=p.name,
+                             v=self.ref.get("version", ""), why=self._pp_why(c))) != \
+                QMessageBox.StandardButton.Yes:
+            return
+        if c and (c.unknown_features or (c.unknown_pp and not c.pp_rejected)) and QMessageBox.question(
                 self, APP, L("« {name} » utilise des réglages que votre Community Shaders ne connaît pas ({list}). "
                              "Ils seront ignorés. Appliquer quand même ? La configuration en place est sauvegardée "
                              "avant.", name=p.name, list=", ".join(c.unknown_features + c.unknown_pp))) != \
@@ -963,7 +984,10 @@ class Main(QWidget):
     def _warn_imported(self, made):
         for path in made:
             c = self.compats.get(path.name)
-            if c and c.level == "warning":
+            if c and c.pp_rejected:
+                self.say(L("⚠ « {name} » : post-traitement ignoré par votre Community Shaders ({why}).",
+                           name=path.name, why=self._pp_why(c)))
+            if c and (c.unknown_features or (c.unknown_pp and not c.pp_rejected)):
                 self.say(L("⚠ « {name} » : features inconnues de votre Community Shaders, elles seront ignorées "
                            "({list}).", name=path.name, list=", ".join(c.unknown_features + c.unknown_pp)))
 

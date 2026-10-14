@@ -85,6 +85,23 @@ def test_compatibilite(tmp_path):
     (cs / "SettingsUser.json").write_text(json.dumps({"Post Processing": {"Film Grain": {}}}))
     assert "Film Grain" not in core.game_reference(str(cs), tmp_path / "ref.json")["pp"]
 
+def test_post_traitement_rejete(tmp_path):
+    """Chaîne sans Composite (preset CS 1.4.6, comme Yogurt's 0.3) : Bottled la remplace par une chaîne vide."""
+    ref = {"version": "1.9.0.0", "features": ["postprocessing"], "sections": {"Post Processing": ["ppsettings"]},
+           "pp": ["COD Bloom", "Composite", "LUT", "Vignette", "ppsettings", "preset_name"]}
+    def preset(name, version, pp):
+        d = tmp_path / name; d.mkdir()
+        (d / "SettingsUser.json").write_text(json.dumps({"Version": version, "Post Processing": pp}))
+        return core.check_preset(d, ref)
+    c = preset("sans_composite", "1-9-0-0", {"COD Bloom": {}, "LUT": {}, "ppsettings": {}})
+    assert c.level == "warning" and c.pp_rejected == ["composite"]
+    c = preset("yogurt", "1-4-6-0", {"COD Bloom": {}, "PotatoFX Camera": {}, "ppsettings": {}})
+    assert c.pp_rejected == ["composite", "unknown", "version"] and c.unknown_pp == ["PotatoFX Camera"]
+    assert c.preset_version == "1.4.6.0"
+    # chaîne complète, ou vide (rien à perdre) : pas de rejet
+    assert preset("complet", "1-8-0-0", {"COD Bloom": {}, "Composite": {}, "ppsettings": {}}).level == "ok"
+    assert preset("vide", "1-4-6-0", {"ppsettings": {}}).pp_rejected == []
+
 def test_nexus_liens():
     import nexus
     i = nexus.parse_nxm("nxm://SkyrimSpecialEdition/mods/165803/files/700123?key=abc&expires=1760000000&user_id=1")

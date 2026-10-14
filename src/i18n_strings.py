@@ -209,6 +209,36 @@ TR = {
         "<b>⚠ Unknown post-processing effects</b>: {list}. They will be ignored.",
         "<b>⚠ Effetti di post-elaborazione sconosciuti</b>: {list}. Saranno ignorati.",
         "<b>⚠ Efectos de posprocesado desconocidos</b>: {list}. Se ignorarán."),
+    "<b>⚠ Post-traitement du preset ignoré</b> : votre Community Shaders {v} rejettera sa chaîne de "
+    "post-traitement ({why}) et la remplacera par une chaîne vide. Ni l'étalonnage ni les effets du preset ne seront "
+    "rendus : refaites la chaîne en jeu ou prenez une version du preset faite pour CS {v}.": (
+        "<b>⚠ Preset post-processing ignored</b>: your Community Shaders {v} will reject its post-processing chain "
+        "({why}) and replace it with an empty chain. Neither the preset's grading nor its effects will be rendered: "
+        "rebuild the chain in game or get a version of the preset made for CS {v}.",
+        "<b>⚠ Post-elaborazione del preset ignorata</b>: il tuo Community Shaders {v} rifiuterà la sua catena di "
+        "post-elaborazione ({why}) e la sostituirà con una catena vuota. Né la gradazione né gli effetti del preset "
+        "saranno resi: ricostruisci la catena in gioco o usa una versione del preset fatta per CS {v}.",
+        "<b>⚠ Posprocesado del preset ignorado</b>: su Community Shaders {v} rechazará su cadena de posprocesado "
+        "({why}) y la sustituirá por una cadena vacía. Ni la gradación ni los efectos del preset se mostrarán: "
+        "rehaga la cadena en el juego o use una versión del preset hecha para CS {v}."),
+    "étape Composite absente": ("Composite step missing", "passaggio Composite assente", "falta el paso Composite"),
+    "effets inconnus : {list}": ("unknown effects: {list}", "effetti sconosciuti: {list}",
+                                 "efectos desconocidos: {list}"),
+    "preset fait pour CS {pv}": ("preset made for CS {pv}", "preset fatto per CS {pv}",
+                                 "preset hecho para CS {pv}"),
+    "Le post-traitement de « {name} » sera ignoré : votre Community Shaders {v} rejettera sa chaîne ({why}) et la "
+    "remplacera par une chaîne vide. Appliquer quand même ? La configuration en place est sauvegardée avant.": (
+        "The post-processing of “{name}” will be ignored: your Community Shaders {v} will reject its chain ({why}) "
+        "and replace it with an empty chain. Apply anyway? The current configuration is backed up first.",
+        "La post-elaborazione di «{name}» sarà ignorata: il tuo Community Shaders {v} rifiuterà la sua catena "
+        "({why}) e la sostituirà con una catena vuota. Applicare comunque? La configurazione attuale viene salvata "
+        "prima.",
+        "El posprocesado de «{name}» se ignorará: su Community Shaders {v} rechazará su cadena ({why}) y la "
+        "sustituirá por una cadena vacía. ¿Aplicar de todos modos? La configuración actual se guarda antes."),
+    "⚠ « {name} » : post-traitement ignoré par votre Community Shaders ({why}).": (
+        "⚠ “{name}”: post-processing ignored by your Community Shaders ({why}).",
+        "⚠ «{name}»: post-elaborazione ignorata dal tuo Community Shaders ({why}).",
+        "⚠ «{name}»: posprocesado ignorado por su Community Shaders ({why})."),
     "<b>ⓘ Features absentes du preset</b> : {list}. Elles garderont leurs valeurs par défaut.": (
         "<b>ⓘ Features missing from the preset</b>: {list}. They will keep their default values.",
         "<b>ⓘ Feature assenti dal preset</b>: {list}. Manterranno i valori predefiniti.",

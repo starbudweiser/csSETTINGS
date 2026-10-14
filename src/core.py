@@ -313,6 +313,21 @@ class Compat:
     missing_features: list[str] = field(default_factory=list)   # absentes du preset : valeurs par défaut
     unknown_options: int = 0                                     # options inconnues dans des features connues
     unknown_pp: list[str] = field(default_factory=list)          # effets de post-traitement inconnus
+    # chaîne « Post Processing » de SettingsUser.json que le CS installé rejettera en entier (il la remplace par
+    # une chaîne vide au lancement) : raisons parmi composite (étape absente), unknown (effets), version
+    pp_rejected: list[str] = field(default_factory=list)
+    preset_version: str = ""
+
+
+PP_META = {"ppsettings", "preset_name"}     # réglages globaux du bloc, pas des étapes de la chaîne
+PP_VERSION_GAP = 4                          # écart de version mineure jugé « nettement plus ancien »
+
+
+def _version_tuple(v) -> tuple[int, ...]:
+    try:
+        return tuple(int(x) for x in str(v).replace("-", ".").split("."))
+    except ValueError:
+        return ()
 
 
 def check_preset(preset_path: Path, ref: dict) -> Compat:
@@ -337,14 +352,24 @@ def check_preset(preset_path: Path, ref: dict) -> Compat:
                                    and not any(_squash(k) == _squash(u) for u in c.unknown_features)]
         c.missing_features = [k for k in sections if k not in settings and k not in CORE_SECTIONS
                               and _feature_known(k, features)]
+        c.preset_version = str(settings.get("Version", "")).replace("-", ".")
         pp = settings.get("Post Processing")
         if isinstance(pp, dict):
             c.unknown_pp += [k for k in pp if k not in pp_known]
+            if set(pp) - PP_META:
+                if "Composite" in pp_known and "Composite" not in pp:
+                    c.pp_rejected.append("composite")
+                if c.unknown_pp:
+                    c.pp_rejected.append("unknown")
+                pv, rv = _version_tuple(c.preset_version), _version_tuple(ref.get("version", ""))
+                if len(pv) >= 2 and len(rv) >= 2 and (pv[0] < rv[0] or (pv[0] == rv[0]
+                                                                        and rv[1] - pv[1] >= PP_VERSION_GAP)):
+                    c.pp_rejected.append("version")
     pp_dir = preset_path / PP
     if pp_dir.is_dir():
         for f in sorted(pp_dir.glob("*.json")):
             c.unknown_pp += [k for k in _read_json(f) if k not in pp_known and k not in c.unknown_pp]
-    if c.unknown_features or c.unknown_pp:
+    if c.unknown_features or c.unknown_pp or c.pp_rejected:
         c.level = "warning"
     elif c.missing_features or c.unknown_options:
         c.level = "info"
