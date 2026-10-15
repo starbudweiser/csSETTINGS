@@ -210,8 +210,11 @@ def _check_ready(game: Path, is_running: Callable[[], bool] | None, check_versio
 # ------------------------------------------------------------------ installer / retirer
 
 def install(game_dir: Path, layer: str, src: Path, backup_root: Path, *, is_running=None,
-            check_version: bool = True) -> Path:
-    """Pose une couche. Renvoie le dossier de sauvegarde de l'opération. En cas d'échec, tout est remis."""
+            check_version: bool = True, adopt: bool = False) -> Path:
+    """Pose une couche. Renvoie le dossier de sauvegarde de l'opération. En cas d'échec, tout est remis.
+
+    adopt : les fichiers déjà identiques à la base sont pris en charge (retirés avec la couche) au lieu d'être
+    laissés ; sert à reprendre une installation faite à la main, sans rien recopier."""
     game, src = Path(game_dir), Path(src)
     _check_ready(game, is_running, check_version)
     if not src.is_dir():
@@ -234,7 +237,7 @@ def install(game_dir: Path, layer: str, src: Path, backup_root: Path, *, is_runn
             d = game / rel
             fp = fingerprint(s)
             if rel in plan.same:
-                files[rel] = {"fp": fp, "pre": True}
+                files[rel] = {"fp": fp, "pre": not adopt}
                 continue
             if rel in plan.replace:
                 _stash(d, op, "remplaces", rel)
@@ -351,6 +354,45 @@ def verify(game_dir: Path, layer: str) -> dict[str, list[str]]:
     return out
 
 
+def plan_swap(game_dir: Path, current: str | None, target: str, base: Path) -> dict:
+    """Ce que fera un échange, sans rien écrire : fichiers retirés, mis de côté (modifiés depuis la pose),
+    ajoutés, remplacés (sauvegardés) et déjà identiques."""
+    game = Path(game_dir)
+    entry = read_manifest(game)["layers"].get(current or "", {}).get("files", {})
+    owned = {rel for rel, meta in entry.items() if not meta.get("pre")}
+    aside = [rel for rel in sorted(owned) if (game / rel).is_file() and fingerprint(game / rel) != entry[rel]["fp"]]
+    out = {"retire": len(owned), "mis_de_côté": aside, "ajoute": 0, "remplace": 0, "identiques": 0}
+    for rel, s in files_of(base).items():
+        d = game / rel
+        if rel in owned or not d.is_file():
+            out["ajoute"] += 1
+        elif fingerprint(d) == fingerprint(s):
+            out["identiques"] += 1
+        else:
+            out["remplace"] += 1
+    return out
+
+
+def adoptable(game_dir: Path, base: Path, threshold: float = 0.8) -> bool:
+    """Vrai si le jeu contient déjà (au moins `threshold`) cette base : installation faite à la main à reprendre."""
+    p = plan_install(game_dir, "?", base)
+    total = len(p.add) + len(p.replace) + len(p.same)
+    return total > 0 and len(p.same) / total >= threshold
+
+
+def list_operations(root: Path) -> list[dict]:
+    """Opérations d'installation et de retrait déjà faites (dossiers de sauvegarde), la plus récente d'abord."""
+    out = []
+    for d in sorted(Path(root).glob("*/" + JOURNAL), reverse=True):
+        try:
+            j = json.loads(d.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        out.append({"path": d.parent, "name": d.parent.name, "type": j.get("type", ""), "layer": j.get("layer", ""),
+                    "status": j.get("status", "")})
+    return out
+
+
 # ------------------------------------------------------------------ bases neutres
 
 @dataclass
@@ -417,15 +459,11 @@ def recettes(shaders_root: Path) -> dict[str, list[Source]]:
     }
 
 
-def bases_dir(library: str | Path) -> Path:
-    """Dossier des bases : _SYSTEMES, à côté des bibliothèques de presets."""
-    return Path(library).parent / "_SYSTEMES"
-
-
 def backup_root(backup_dir: str | Path) -> Path:
     return Path(backup_dir).parent / "Systemes_sauvegardes"
 
 
-def available_bases(library: str | Path) -> dict[str, Path]:
-    root = bases_dir(library)
+def available_bases(systems_dir: str | Path) -> dict[str, Path]:
+    """Bases construites (dossiers CS, ENB, commun avec leur systeme.json) dans le dossier des systèmes."""
+    root = Path(systems_dir)
     return {n: root / n for n in (COMMUN, CS, ENB) if (root / n / INFO).is_file()}

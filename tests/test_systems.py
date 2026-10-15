@@ -137,3 +137,18 @@ def test_assemble_filtres_et_atomique(tmp_path):
     with pytest.raises(sy.SystemError_):
         sy.assemble(tmp_path / "X", [sy.Source(tmp_path / "absent")], "X")
     assert not (tmp_path / "X").exists() and not (tmp_path / "X.en_construction").exists()
+
+
+def test_plan_swap_adopt_et_historique(world):
+    game, bases, sauv = world
+    put(game, {"Data/Shaders/Features/a.ini": "a", "Data/SKSE/Plugins/CommunityShaders.dll": "cs", "d3d11.dll": "pont mDLSS"})
+    assert sy.adoptable(game, bases["CS"]) and not sy.adoptable(game, bases["ENB"])
+    sy.install(game, "CS", bases["CS"], sauv, adopt=True)                         # reprend l'installation faite à la main
+    assert all(not m["pre"] for m in sy.read_manifest(game)["layers"]["CS"]["files"].values())
+    (game / "Data/Shaders/Features/a.ini").write_text("réglé par le joueur")
+    pl = sy.plan_swap(game, "CS", "ENB", bases["ENB"])
+    assert pl["retire"] == 3 and pl["mis_de_côté"] == ["Data/Shaders/Features/a.ini"] and pl["ajoute"] == 3
+    sy.swap(game, "CS", "ENB", bases, sauv)                                       # le CS adopté est bien retiré
+    assert not (game / "Data/SKSE/Plugins/CommunityShaders.dll").exists() and (game / "d3d11.dll").read_text() == "enb"
+    ops = sy.list_operations(sauv)
+    assert {(o["type"], o["layer"], o["status"]) for o in ops} >= {("remove", "CS", "terminé"), ("install", "ENB", "terminé")}

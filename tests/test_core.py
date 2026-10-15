@@ -1,4 +1,5 @@
 import json, sys, zipfile
+import pytest
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 import core  # noqa: E402
@@ -169,3 +170,25 @@ def test_preferences_joueur_gardees(tmp_path):
     assert json.loads((pr / "SettingsUser.json").read_text())["Menu"]["ToggleKey"] == 35    # preset intact
     core.apply_preset(cfg, saved, None)                                  # restauration : tout tel quel
     assert json.loads((cs / "SettingsUser.json").read_text())["Vignette"] == {"x": 0}
+
+def test_presets_enb(tmp_path):
+    """Preset ENB : liste, application avec sauvegarde, modules KiLoader gardés, enregistrement de l'ENB en place."""
+    cs = tmp_path / "jeu" / "Data" / "SKSE" / "Plugins" / "CommunityShaders"; cs.mkdir(parents=True)
+    root = tmp_path / "jeu"
+    (root / "enbseries").mkdir(); (root / "enbseries.ini").write_text("ancien")
+    (root / "enbseries" / "enbeffect.fx").write_text("ancien"); (root / "enbseries" / "Sat.dllplugin").write_text("module")
+    lib = tmp_path / "enb"
+    (lib / "Doux" / "enbseries").mkdir(parents=True); (lib / "Doux" / "enbseries.ini").write_text("neuf")
+    (lib / "Doux" / "enbseries" / "enbeffect.fx").write_text("neuf")
+    (lib / "Pack" / "KiLoader").mkdir(parents=True)                                  # paquet, pas un preset
+    cfg = {"library": str(tmp_path / "cs"), "enb_library": str(lib), "cs_dir": str(cs), "backup_dir": str(tmp_path / "bk")}
+    assert [p.name for p in core.list_enb_presets(str(lib))] == ["Doux"]
+    saved = core.apply_enb_preset(cfg, lib / "Doux", "Doux")
+    assert (root / "enbseries.ini").read_text() == "neuf" and (root / "enbseries" / "enbeffect.fx").read_text() == "neuf"
+    assert (root / "enbseries" / "Sat.dllplugin").read_text() == "module"            # module d'installation gardé
+    assert (saved / "ENB" / "enbseries.ini").read_text() == "ancien"                  # rien d'effacé
+    assert core.active_preset(str(lib)) == "Doux"
+    dest = core.save_current_enb(cfg, "Mon ENB")
+    assert (dest / "enbseries.ini").read_text() == "neuf" and not (dest / "enbseries" / "Sat.dllplugin").exists()
+    with pytest.raises(FileExistsError):
+        core.save_current_enb(cfg, "Mon ENB")

@@ -326,4 +326,240 @@ TR = {
         "<b>Preset ENB (Effects 11)</b>: reemplaza enbseries.ini y la carpeta enbseries en la carpeta del juego. "
         "Los actuales se mueven a la copia de seguridad; no se borra nada."),
     "+ ENB": ("+ ENB", "+ ENB", "+ ENB"),
+    # ------------------------------------------------------------ systèmes de shaders (CS / ENB)
+    'Presets ENB': (
+        'ENB presets',
+        'Preset ENB',
+        'Presets ENB'),
+    'Système': (
+        'System',
+        'Sistema',
+        'Sistema'),
+    ("Le système ENB est actif : les presets Community Shaders ne s'appliquent pas. Passez à Community Shaders "
+     "dans l'onglet Système."): (
+        'The ENB system is active: Community Shaders presets do not apply. Switch to Community Shaders in the System tab.',
+        'Il sistema ENB è attivo: i preset di Community Shaders non si applicano. Passa a Community Shaders nella scheda Sistema.',
+        'El sistema ENB está activo: los presets de Community Shaders no se aplican. Pase a Community Shaders en la pestaña Sistema.'),
+    "Enregistrer l'ENB actuel…": (
+        'Save current ENB…',
+        "Salva l'ENB attuale…",
+        'Guardar el ENB actual…'),
+    "Le système ENB n'est pas actif : passez-y depuis l'onglet Système pour appliquer un preset ENB.": (
+        'The ENB system is not active: switch to it from the System tab to apply an ENB preset.',
+        'Il sistema ENB non è attivo: passa a ENB dalla scheda Sistema per applicare un preset ENB.',
+        'El sistema ENB no está activo: pase a él desde la pestaña Sistema para aplicar un preset ENB.'),
+    ('Avant chaque application, enbseries.ini et le dossier enbseries en place sont déplacés dans la sauvegarde, '
+     "rien n'est effacé. Aucun fichier du preset n'est modifié."): (
+        'Before each application, the enbseries.ini and enbseries folder in place are moved into the backup, nothing is deleted. No file of the preset is modified.',
+        'Prima di ogni applicazione, enbseries.ini e la cartella enbseries in uso vengono spostati nel backup, nulla viene eliminato. Nessun file del preset viene modificato.',
+        'Antes de cada aplicación, enbseries.ini y la carpeta enbseries en uso se mueven a la copia de seguridad, no se borra nada. Ningún archivo del preset se modifica.'),
+    'Appliquer ce preset ENB': (
+        'Apply this ENB preset',
+        'Applica questo preset ENB',
+        'Aplicar este preset ENB'),
+    'Remplace enbseries.ini et le dossier enbseries à la racine du jeu ({n} effets).': (
+        'Replaces enbseries.ini and the enbseries folder at the game root ({n} effects).',
+        'Sostituisce enbseries.ini e la cartella enbseries nella radice del gioco ({n} effetti).',
+        'Sustituye enbseries.ini y la carpeta enbseries en la raíz del juego ({n} efectos).'),
+    'Preset ENB appliqué : {name}. Ancienne config sauvegardée dans {saved}': (
+        'ENB preset applied: {name}. Previous config backed up in {saved}',
+        'Preset ENB applicato: {name}. Configurazione precedente salvata in {saved}',
+        'Preset ENB aplicado: {name}. Configuración anterior guardada en {saved}'),
+    'Nom du preset ENB à enregistrer :': (
+        'Name of the ENB preset to save:',
+        'Nome del preset ENB da salvare:',
+        'Nombre del preset ENB a guardar:'),
+    'Preset ENB enregistré : {name}': (
+        'ENB preset saved: {name}',
+        'Preset ENB salvato: {name}',
+        'Preset ENB guardado: {name}'),
+    ('Un système de shaders à la fois : Community Shaders (Bottled) ou ENB. Chaque système a une base neutre ; '
+     "passer de l'un à l'autre retire proprement l'ancien (ce que vous avez modifié est mis de côté, jamais "
+     'perdu) et pose le nouveau. Les pièces communes (KiLoader…) restent.'): (
+        'One shader system at a time: Community Shaders (Bottled) or ENB. Each system has a neutral base; switching from one to the other cleanly removes the old one (anything you changed is set aside, never lost) and installs the new one. Shared parts (KiLoader…) stay.',
+        "Un solo sistema di shader alla volta: Community Shaders (Bottled) o ENB. Ogni sistema ha una base neutra; passare dall'uno all'altro rimuove con cura il vecchio (ciò che hai modificato viene messo da parte, mai perso) e installa il nuovo. Le parti comuni (KiLoader…) restano.",
+        'Un solo sistema de shaders a la vez: Community Shaders (Bottled) o ENB. Cada sistema tiene una base neutra; pasar de uno a otro retira limpiamente el anterior (lo que haya modificado se aparta, nunca se pierde) e instala el nuevo. Las piezas comunes (KiLoader…) se quedan.'),
+    'Retirer le système': (
+        'Remove the system',
+        'Rimuovi il sistema',
+        'Retirar el sistema'),
+    'Reconstruire les bases…': (
+        'Rebuild the bases…',
+        'Ricostruisci le basi…',
+        'Reconstruir las bases…'),
+    'Afficher les bases': (
+        'Show the bases',
+        'Mostra le basi',
+        'Mostrar las bases'),
+    'Historique des échanges': (
+        'Swap history',
+        'Cronologia degli scambi',
+        'Historial de cambios'),
+    'Afficher la sauvegarde dans le Finder': (
+        'Show the backup in Finder',
+        'Mostra il backup nel Finder',
+        'Mostrar la copia en el Finder'),
+    'Installation': (
+        'Installation',
+        'Installazione',
+        'Instalación'),
+    'Retrait': (
+        'Removal',
+        'Rimozione',
+        'Retirada'),
+    "Opération en cours… ne fermez pas l'application ni le disque.": (
+        'Operation in progress… do not close the app or the disk.',
+        "Operazione in corso… non chiudere l'app né il disco.",
+        'Operación en curso… no cierre la aplicación ni el disco.'),
+    'Système « {name} » retiré. Sauvegardes : {dir}': (
+        'System “{name}” removed. Backups: {dir}',
+        'Sistema «{name}» rimosso. Backup: {dir}',
+        'Sistema «{name}» retirado. Copias: {dir}'),
+    'Bibliothèque : {lib}': (
+        'Library: {lib}',
+        'Libreria: {lib}',
+        'Biblioteca: {lib}'),
+    'Bibliothèque de presets ENB': (
+        'ENB presets library',
+        'Libreria dei preset ENB',
+        'Biblioteca de presets ENB'),
+    'Dossier des bases de systèmes (CS / ENB)': (
+        'Folder of the system bases (CS / ENB)',
+        'Cartella delle basi dei sistemi (CS / ENB)',
+        'Carpeta de las bases de los sistemas (CS / ENB)'),
+    'Aucun preset ENB': (
+        'No ENB preset',
+        'Nessun preset ENB',
+        'Ningún preset ENB'),
+    'Rangez vos presets ENB (un dossier avec enbseries.ini et enbseries/) dans : {lib}': (
+        'Put your ENB presets (a folder with enbseries.ini and enbseries/) in: {lib}',
+        'Metti i tuoi preset ENB (una cartella con enbseries.ini e enbseries/) in: {lib}',
+        'Guarde sus presets ENB (una carpeta con enbseries.ini y enbseries/) en: {lib}'),
+    'enblocal.ini du preset non appliqué : il règle la machine, pas le rendu.': (
+        "The preset's enblocal.ini is not applied: it tunes the machine, not the look.",
+        "L'enblocal.ini del preset non viene applicato: regola la macchina, non la resa.",
+        'El enblocal.ini del preset no se aplica: ajusta la máquina, no el aspecto.'),
+    'Opération': (
+        'Operation',
+        'Operazione',
+        'Operación'),
+    'Couche': (
+        'Layer',
+        'Livello',
+        'Capa'),
+    'État': (
+        'Status',
+        'Stato',
+        'Estado'),
+    '<b>⚠ Dossier du jeu introuvable</b> : {path}. Vérifiez les réglages et que le disque est branché.': (
+        '<b>⚠ Game folder not found</b>: {path}. Check the settings and that the disk is connected.',
+        '<b>⚠ Cartella del gioco non trovata</b>: {path}. Controlla le impostazioni e che il disco sia collegato.',
+        '<b>⚠ Carpeta del juego no encontrada</b>: {path}. Compruebe los ajustes y que el disco esté conectado.'),
+    'Aucune base neutre construite : cliquez sur « Reconstruire les bases… ».': (
+        'No neutral base built: click “Rebuild the bases…”.',
+        'Nessuna base neutra costruita: fai clic su «Ricostruisci le basi…».',
+        'Ninguna base neutra construida: pulse «Reconstruir las bases…».'),
+    '✕ {err}': (
+        '✕ {err}',
+        '✕ {err}',
+        '✕ {err}'),
+    ("L'opération a échoué : {err}. Le jeu a été remis dans son état d'avant si l'échec est survenu en cours de "
+     'route ; les sauvegardes sont dans {dir}.'): (
+        'The operation failed: {err}. The game was put back as it was if the failure happened midway; backups are in {dir}.',
+        "L'operazione è fallita: {err}. Il gioco è stato ripristinato com'era se l'errore è avvenuto a metà; i backup sono in {dir}.",
+        'La operación falló: {err}. El juego se dejó como estaba si el fallo ocurrió a medias; las copias están en {dir}.'),
+    ("Reprendre l'installation actuelle comme « {name} » : {n} fichiers identiques à la base seront suivis (rien "
+     "n'est recopié ni modifié). Ils seront retirés avec ce système lors d'un échange."): (
+        'Take over the current installation as “{name}”: {n} files identical to the base will be tracked (nothing is copied or changed). They will be removed with this system on a swap.',
+        "Riprendere l'installazione attuale come «{name}»: {n} file identici alla base saranno tracciati (nulla viene copiato o modificato). Saranno rimossi con questo sistema in caso di scambio.",
+        'Retomar la instalación actual como «{name}»: se seguirán {n} archivos idénticos a la base (no se copia ni se cambia nada). Se retirarán con este sistema en un cambio.'),
+    ('Passer à « {name} » ?\n'
+     '\n'
+     "• {r} fichier(s) de l'ancien système retirés, dont {a} modifiés depuis la pose (mis de côté dans la "
+     'sauvegarde)\n'
+     '• {add} fichier(s) ajoutés, {rep} remplacés (originaux sauvegardés)\n'
+     '\n'
+     'Sauvegardes : {dir}'): (
+        'Switch to “{name}”?\n\n• {r} file(s) of the old system removed, {a} of them modified since install (set aside in the backup)\n• {add} file(s) added, {rep} replaced (originals backed up)\n\nBackups: {dir}',
+        "Passare a «{name}»?\n\n• {r} file del vecchio sistema rimossi, di cui {a} modificati dopo l'installazione (messi da parte nel backup)\n• {add} file aggiunti, {rep} sostituiti (originali salvati)\n\nBackup: {dir}",
+        '¿Pasar a «{name}»?\n\n• {r} archivo(s) del sistema anterior retirados, {a} de ellos modificados desde la instalación (apartados en la copia)\n• {add} archivo(s) añadidos, {rep} sustituidos (originales guardados)\n\nCopias: {dir}'),
+    'Système « {name} » en place. Sauvegardes : {dir}': (
+        'System “{name}” in place. Backups: {dir}',
+        'Sistema «{name}» installato. Backup: {dir}',
+        'Sistema «{name}» en su sitio. Copias: {dir}'),
+    ('Retirer le système « {name} » ? Ce que vous avez modifié est mis de côté dans la sauvegarde et les '
+     "fichiers d'origine remplacés sont remis. Sans système, le jeu n'aura plus de shaders de rendu."): (
+        'Remove the system “{name}”? Anything you changed is set aside in the backup and the original files that were replaced are put back. Without a system, the game will have no rendering shaders.',
+        'Rimuovere il sistema «{name}»? Ciò che hai modificato viene messo da parte nel backup e i file originali sostituiti vengono rimessi. Senza sistema, il gioco non avrà shader di rendering.',
+        '¿Retirar el sistema «{name}»? Lo que haya modificado se aparta en la copia y se devuelven los archivos originales sustituidos. Sin sistema, el juego no tendrá shaders de renderizado.'),
+    ('Reconstruire les bases neutres à partir de {src} ? Les bases actuelles sont mises de côté (dossier '
+     '_anciennes), jamais supprimées.'): (
+        'Rebuild the neutral bases from {src}? The current bases are set aside (_anciennes folder), never deleted.',
+        'Ricostruire le basi neutre da {src}? Le basi attuali vengono messe da parte (cartella _anciennes), mai eliminate.',
+        '¿Reconstruir las bases neutras desde {src}? Las bases actuales se apartan (carpeta _anciennes), nunca se borran.'),
+    "Impossible d'appliquer « {name} » ({err}).": (
+        'Could not apply “{name}” ({err}).',
+        'Impossibile applicare «{name}» ({err}).',
+        'No se pudo aplicar «{name}» ({err}).'),
+    'Un preset ENB porte déjà ce nom.': (
+        'An ENB preset already has this name.',
+        'Esiste già un preset ENB con questo nome.',
+        'Ya existe un preset ENB con este nombre.'),
+    'Aucun enbseries.ini à la racine du jeu : rien à enregistrer.': (
+        'No enbseries.ini at the game root: nothing to save.',
+        'Nessun enbseries.ini nella radice del gioco: niente da salvare.',
+        'No hay enbseries.ini en la raíz del juego: nada que guardar.'),
+    '<b>Système actif</b> : {name}': (
+        '<b>Active system</b>: {name}',
+        '<b>Sistema attivo</b>: {name}',
+        '<b>Sistema activo</b>: {name}'),
+    ("<b>Aucun système géré par csSETTINGS</b> : l'installation actuelle n'est pas encore suivie. Reprenez-la ou "
+     'choisissez un système ci-dessous.'): (
+        '<b>No system managed by csSETTINGS</b>: the current installation is not tracked yet. Take it over or choose a system below.',
+        "<b>Nessun sistema gestito da csSETTINGS</b>: l'installazione attuale non è ancora tracciata. Riprendila o scegli un sistema qui sotto.",
+        '<b>Ningún sistema gestionado por csSETTINGS</b>: la instalación actual aún no se sigue. Retómela o elija un sistema abajo.'),
+    'Skyrim {v} détecté, SKSE présent.': (
+        'Skyrim {v} detected, SKSE present.',
+        'Skyrim {v} rilevato, SKSE presente.',
+        'Skyrim {v} detectado, SKSE presente.'),
+    'intact': (
+        'intact',
+        'intatto',
+        'intacto'),
+    '{m} modifié(s), {a} absent(s) depuis la pose': (
+        '{m} modified, {a} missing since install',
+        "{m} modificati, {a} mancanti dopo l'installazione",
+        '{m} modificados, {a} ausentes desde la instalación'),
+    '{name} : base absente': (
+        '{name}: base missing',
+        '{name}: base mancante',
+        '{name}: base ausente'),
+    '<b>{name}</b> : {n} fichiers, construite le {date}': (
+        '<b>{name}</b>: {n} files, built on {date}',
+        '<b>{name}</b>: {n} file, costruita il {date}',
+        '<b>{name}</b>: {n} archivos, construida el {date}'),
+    '✓ {name} (actif)': (
+        '✓ {name} (active)',
+        '✓ {name} (attivo)',
+        '✓ {name} (activo)'),
+    "Reprendre l'installation actuelle ({name})": (
+        'Take over the current installation ({name})',
+        "Riprendi l'installazione attuale ({name})",
+        'Retomar la instalación actual ({name})'),
+    'Paquet introuvable : {path}': (
+        'Package not found: {path}',
+        'Pacchetto non trovato: {path}',
+        'Paquete no encontrado: {path}'),
+    'Bases reconstruites : {list}': (
+        'Bases rebuilt: {list}',
+        'Basi ricostruite: {list}',
+        'Bases reconstruidas: {list}'),
+    'Passer à {name}': (
+        'Switch to {name}',
+        'Passa a {name}',
+        'Pasar a {name}'),
+    'Installer {name}': (
+        'Install {name}',
+        'Installa {name}',
+        'Instalar {name}'),
 }

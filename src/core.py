@@ -17,10 +17,12 @@ from pathlib import Path
 
 CONFIG_FILE = Path.home() / "Library" / "Application Support" / "csSETTINGS" / "config.json"
 DEFAULTS = {
-    "library": "/Volumes/SKYRIM/MODS COLLECTION/_SHADERS/CS PRESETS",
+    "library": "/Volumes/SKYRIM/MODS COLLECTION/_SHADERS/_SHADER PRESETS/CS PRESETS",
     "cs_dir": "/Volumes/SAMSUNG T7/VIRTUAL MACHINES/Crossover/Skyrim-MetalFX/drive_c/Games/"
               "Skyrim Special Edition/Data/SKSE/Plugins/CommunityShaders",
     "backup_dir": "/Volumes/SAMSUNG T7/VIRTUAL MACHINES/Crossover/_RETIRES_Skyrim-MetalFX/CS_presets_sauvegardes",
+    "enb_library": "/Volumes/SKYRIM/MODS COLLECTION/_SHADERS/_SHADER PRESETS/ENB PRESETS",
+    "systems_dir": "/Volumes/SKYRIM/MODS COLLECTION/_SHADERS/_SYSTEMES",      # bases neutres CS / ENB / commun
     "lang": "auto",
 }
 SETTINGS = "SettingsUser.json"
@@ -236,6 +238,68 @@ def save_current(cfg: dict, name: str) -> Path:
     (dest / META).write_text(json.dumps({"source": "config actuelle", "date": time.strftime("%Y-%m-%d %H:%M")},
                                         ensure_ascii=False, indent=2), encoding="utf-8")
     (Path(cfg["library"]) / STATE).write_text(dest.name, encoding="utf-8")
+    return dest
+
+
+# ------------------------------------------------------------------ presets ENB (système ENB)
+
+def enb_source(path: Path) -> Path:
+    """Dossier qui contient enbseries.ini : le preset lui-même, ou son sous-dossier ENB/."""
+    path = Path(path)
+    return path / ENB if (path / ENB / "enbseries.ini").is_file() else path
+
+
+def list_enb_presets(library: str) -> list[Preset]:
+    lib = Path(library)
+    if not lib.is_dir():
+        return []
+    out = []
+    for d in sorted(lib.iterdir(), key=lambda x: x.name.lower()):
+        if d.is_dir() and not d.name.startswith(".") and (enb_source(d) / "enbseries.ini").is_file():
+            p = Preset(d.name, d, has_enb=True)
+            try:
+                p.meta = json.loads((d / META).read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                pass
+            p.pp_files = sorted(f.name for f in (enb_source(d) / "enbseries").glob("*.fx*")) \
+                if (enb_source(d) / "enbseries").is_dir() else []
+            out.append(p)
+    return out
+
+
+def apply_enb_preset(cfg: dict, preset_path: Path, label: str | None = None) -> Path:
+    """Applique un preset ENB (enbseries.ini + enbseries/). La configuration en place est sauvegardée d'abord ;
+    les modules de KiLoader (enbseries/*.dllplugin) sont gardés. Renvoie le dossier de sauvegarde."""
+    src = enb_source(Path(preset_path))
+    if not (src / "enbseries.ini").is_file():
+        raise ValueError(f"{preset_path}: pas de enbseries.ini")
+    saved = backup(cfg, f"avant ENB {label or Path(preset_path).name}")
+    _apply_enb(cfg, src, saved / ENB)
+    if label is not None:
+        lib = Path(cfg.get("enb_library") or DEFAULTS["enb_library"])
+        lib.mkdir(parents=True, exist_ok=True)
+        (lib / STATE).write_text(label, encoding="utf-8")
+    return saved
+
+
+def save_current_enb(cfg: dict, name: str) -> Path:
+    """Range le preset ENB en place (enbseries.ini + enbseries/, sans les modules .dllplugin de l'installation)
+    dans la bibliothèque ENB."""
+    lib = Path(cfg.get("enb_library") or DEFAULTS["enb_library"])
+    dest = lib / safe_name(name)
+    if dest.exists():
+        raise FileExistsError(str(dest))
+    root = game_dir(cfg["cs_dir"])
+    if not (root / "enbseries.ini").is_file():
+        raise FileNotFoundError(str(root / "enbseries.ini"))
+    dest.mkdir(parents=True)
+    shutil.copy2(root / "enbseries.ini", dest / "enbseries.ini")
+    if (root / "enbseries").is_dir():
+        shutil.copytree(root / "enbseries", dest / "enbseries",
+                        ignore=shutil.ignore_patterns(*SKIP, "*.dllplugin"))
+    (dest / META).write_text(json.dumps({"source": "config ENB actuelle", "date": time.strftime("%Y-%m-%d %H:%M")},
+                                        ensure_ascii=False, indent=2), encoding="utf-8")
+    (lib / STATE).write_text(dest.name, encoding="utf-8")
     return dest
 
 

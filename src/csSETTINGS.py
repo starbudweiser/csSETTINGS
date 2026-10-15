@@ -5,6 +5,7 @@ restaurer une sauvegarde, importer une archive ou un dossier, télécharger depu
 """
 from __future__ import annotations
 
+import json
 import os
 import re
 import subprocess
@@ -26,6 +27,7 @@ import core
 import i18n
 import nexus
 import socle_qt as S
+import systems
 from i18n import L
 
 APP = "csSETTINGS"
@@ -77,10 +79,12 @@ class SettingsDialog(QDialog):
         form = QFormLayout()
         form.setSpacing(int(S.m("space-2")))
         self.fields = {}
-        for key, label in (("library", L("Bibliothèque de presets")), ("cs_dir", L("Dossier Community Shaders du jeu")),
+        for key, label in (("library", L("Bibliothèque de presets")), ("enb_library", L("Bibliothèque de presets ENB")),
+                           ("systems_dir", L("Dossier des bases de systèmes (CS / ENB)")),
+                           ("cs_dir", L("Dossier Community Shaders du jeu")),
                            ("backup_dir", L("Dossier des sauvegardes"))):
             row = QHBoxLayout()
-            ed = QLineEdit(self.cfg[key])
+            ed = QLineEdit(self.cfg.get(key, core.DEFAULTS.get(key, "")))
             S.role(ed, "path")
             btn = QPushButton(L("Choisir…"))
             btn.clicked.connect(lambda _=False, e=ed: self._pick(e))
@@ -584,6 +588,9 @@ class Main(QWidget):
     def __init__(self, cfg: dict):
         super().__init__()
         self.cfg = cfg
+        self.sysname = None                 # système de shaders actif : CS, ENB ou None (non géré)
+        self.sys_modes, self.bases, self.sys_ops = {}, {}, []
+        self.enb_presets, self.enb_active = [], ""
         self.setWindowTitle(APP)
         self.setAcceptDrops(True)
         self.resize(1100, 680)
@@ -621,6 +628,8 @@ class Main(QWidget):
         bl.setSpacing(m)
         self.tabs = QTabWidget()
         self.tabs.addTab(self._presets_tab(), L("Presets"))
+        self.tabs.addTab(self._enb_tab(), L("Presets ENB"))
+        self.tabs.addTab(self._system_tab(), L("Système"))
         self.tabs.addTab(self._backups_tab(), L("Sauvegardes"))
         self.browser = NexusBrowser(self)
         self.browser.imported.connect(self._web_imported)
@@ -696,8 +705,14 @@ class Main(QWidget):
         self.compat.setWordWrap(True)
         self.compat.setTextFormat(Qt.TextFormat.RichText)
         self.compat.setVisible(False)
+        self.cs_note = QLabel(L("Le système ENB est actif : les presets Community Shaders ne s'appliquent pas. "
+                                "Passez à Community Shaders dans l'onglet Système."))
+        self.cs_note.setWordWrap(True)
+        self._tone(self.cs_note, "warning")
+        self.cs_note.setVisible(False)
         rl.addWidget(self.name)
         rl.addWidget(self.badges)
+        rl.addWidget(self.cs_note)
         rl.addWidget(self.compat)
         rl.addWidget(self.details, 1)
         reassure = QLabel(L("Avant chaque application, la configuration en place est sauvegardée "
@@ -732,6 +747,416 @@ class Main(QWidget):
         split.setSizes([380, 700])
         lay.addWidget(split)
         return w
+
+    # ---------------------------------------------------------- onglet presets ENB
+    def _tone(self, label: QLabel, tone: str):
+        """Encart Socle (Callout) sur un QLabel : success, info ou warning."""
+        r, pad = int(S.m("radius")), int(S.m("space-2"))
+        label.setTextFormat(Qt.TextFormat.RichText)
+        label.setStyleSheet(f"QLabel {{ background: {S.c(tone + '-bg')}; color: {S.c(tone + '-soft')}; "
+                            f"border: 1px solid {S.c(tone + '-border')}; border-radius: {r}px; padding: {pad}px; }}")
+
+    def _enb_tab(self):
+        w = QWidget()
+        lay = QHBoxLayout(w)
+        lay.setContentsMargins(0, int(S.m("space-3")), 0, 0)
+        split = QSplitter()
+        split.setHandleWidth(8)
+        left = QWidget()
+        ll = QVBoxLayout(left)
+        ll.setContentsMargins(0, 0, 0, 0)
+        ll.setSpacing(int(S.m("space-2")))
+        self.enb_list = QListWidget()
+        self.enb_list.currentRowChanged.connect(self._enb_show)
+        self.enb_list.itemDoubleClicked.connect(lambda _i: self.apply_enb())
+        ll.addWidget(self.enb_list, 1)
+        self.enb_hint = QLabel("")
+        S.role(self.enb_hint, "subtle")
+        self.enb_hint.setWordWrap(True)
+        ll.addWidget(self.enb_hint)
+        save = QPushButton(L("Enregistrer l'ENB actuel…"))
+        save.clicked.connect(self.save_enb)
+        ll.addWidget(save, 0, Qt.AlignmentFlag.AlignLeft)
+
+        right = QWidget()
+        rl = QVBoxLayout(right)
+        rl.setContentsMargins(int(S.m("space-3")), 0, 0, 0)
+        rl.setSpacing(int(S.m("space-3")))
+        self.enb_name = QLabel("")
+        S.role(self.enb_name, "heading")
+        self.enb_name.setWordWrap(True)
+        self.enb_note = QLabel(L("Le système ENB n'est pas actif : passez-y depuis l'onglet Système pour appliquer "
+                                 "un preset ENB."))
+        self.enb_note.setWordWrap(True)
+        self._tone(self.enb_note, "warning")
+        self.enb_details = QLabel("")
+        self.enb_details.setWordWrap(True)
+        self.enb_details.setTextFormat(Qt.TextFormat.RichText)
+        self.enb_details.setAlignment(Qt.AlignmentFlag.AlignTop)
+        reassure = QLabel(L("Avant chaque application, enbseries.ini et le dossier enbseries en place sont déplacés "
+                            "dans la sauvegarde, rien n'est effacé. Aucun fichier du preset n'est modifié."))
+        reassure.setWordWrap(True)
+        S.role(reassure, "subtle")
+        rl.addWidget(self.enb_name)
+        rl.addWidget(self.enb_note)
+        rl.addWidget(self.enb_details, 1)
+        rl.addWidget(reassure)
+        brow = QHBoxLayout()
+        self.btn_enb_reveal = QPushButton(L("Afficher dans le Finder"))
+        S.variant(self.btn_enb_reveal, "tertiary")
+        self.btn_enb_reveal.clicked.connect(lambda: self._enb_cur() and reveal(self._enb_cur().path))
+        self.btn_enb_apply = QPushButton(L("Appliquer ce preset ENB"))
+        S.variant(self.btn_enb_apply, "action")
+        self.btn_enb_apply.clicked.connect(self.apply_enb)
+        h = int(S.m("size-control-lg")) - 2
+        for b in (save, self.btn_enb_reveal, self.btn_enb_apply):
+            b.setStyleSheet(f"QPushButton {{ min-height: {h}px; max-height: {h}px; }}")
+        brow.addWidget(self.btn_enb_reveal)
+        brow.addStretch(1)
+        brow.addWidget(self.btn_enb_apply)
+        rl.addLayout(brow)
+        split.addWidget(left)
+        split.addWidget(right)
+        split.setSizes([380, 700])
+        lay.addWidget(split)
+        return w
+
+    def _enb_cur(self):
+        r = self.enb_list.currentRow()
+        return self.enb_presets[r] if 0 <= r < len(getattr(self, "enb_presets", [])) else None
+
+    def _enb_show(self, _row):
+        p = self._enb_cur()
+        self.btn_enb_reveal.setEnabled(p is not None)
+        if not p:
+            self.enb_name.setText(L("Aucun preset ENB"))
+            self.enb_details.setText(L("Rangez vos presets ENB (un dossier avec enbseries.ini et enbseries/) dans : "
+                                       "{lib}", lib=self.cfg.get("enb_library", "")))
+            self._update_buttons()
+            return
+        self.enb_name.setText(p.name)
+        lines = []
+        if p.name == self.enb_active:
+            lines.append(f"<span style='color:{S.c('success')}'>{L('✓ Chargé')}</span>")
+        if p.meta.get("source"):
+            lines.append(f"<b>{L('Source')}</b> : {p.meta['source']}")
+        if p.meta.get("date"):
+            lines.append(f"<b>{L('Ajouté le')}</b> : {p.meta['date']}")
+        src = core.enb_source(p.path)
+        lines.append(L("Remplace enbseries.ini et le dossier enbseries à la racine du jeu ({n} effets).",
+                       n=len(p.pp_files)))
+        if (src / "enblocal.ini").is_file():
+            lines.append(L("enblocal.ini du preset non appliqué : il règle la machine, pas le rendu."))
+        self.enb_details.setText("<br><br>".join(lines))
+        self._update_buttons()
+
+    def apply_enb(self):
+        p = self._enb_cur()
+        if not p or self._game_state() or self.sysname != systems.ENB:
+            return
+        try:
+            saved = core.apply_enb_preset(self.cfg, p.path, p.name)
+        except (OSError, ValueError) as e:
+            QMessageBox.warning(self, APP, L("Impossible d'appliquer « {name} » ({err}).", name=p.name, err=e))
+            return
+        self.say(L("Preset ENB appliqué : {name}. Ancienne config sauvegardée dans {saved}", name=p.name,
+                   saved=saved.name))
+        self.refresh()
+
+    def save_enb(self):
+        name, ok = QInputDialog.getText(self, APP, L("Nom du preset ENB à enregistrer :"))
+        if not ok or not name.strip():
+            return
+        try:
+            dest = core.save_current_enb(self.cfg, name.strip())
+        except FileExistsError:
+            QMessageBox.warning(self, APP, L("Un preset ENB porte déjà ce nom."))
+            return
+        except OSError:
+            QMessageBox.warning(self, APP, L("Aucun enbseries.ini à la racine du jeu : rien à enregistrer."))
+            return
+        self.say(L("Preset ENB enregistré : {name}", name=dest.name))
+        self.refresh()
+
+    # ---------------------------------------------------------- onglet système
+    def _system_tab(self):
+        w = QWidget()
+        lay = QVBoxLayout(w)
+        lay.setContentsMargins(0, int(S.m("space-3")), 0, 0)
+        lay.setSpacing(int(S.m("space-3")))
+        self.sys_status = QLabel("")
+        self.sys_status.setWordWrap(True)
+        self.sys_status.setTextFormat(Qt.TextFormat.RichText)
+        lay.addWidget(self.sys_status)
+        intro = QLabel(L("Un système de shaders à la fois : Community Shaders (Bottled) ou ENB. Chaque système a une "
+                         "base neutre ; passer de l'un à l'autre retire proprement l'ancien (ce que vous avez modifié "
+                         "est mis de côté, jamais perdu) et pose le nouveau. Les pièces communes (KiLoader…) restent."))
+        intro.setWordWrap(True)
+        S.role(intro, "subtle")
+        lay.addWidget(intro)
+        row = QHBoxLayout()
+        row.setSpacing(int(S.m("space-2")))
+        self.btn_sys = {}
+        for name, label in ((systems.CS, "Community Shaders"), (systems.ENB, "ENB")):
+            b = QPushButton(label)
+            S.variant(b, "primary")
+            b.clicked.connect(lambda _=False, n=name: self._sys_go(n))
+            self.btn_sys[name] = b
+            row.addWidget(b)
+        self.btn_sys_off = QPushButton(L("Retirer le système"))
+        S.variant(self.btn_sys_off, "tertiary")
+        self.btn_sys_off.clicked.connect(self._sys_remove)
+        row.addWidget(self.btn_sys_off)
+        row.addStretch(1)
+        lay.addLayout(row)
+        self.sys_bases = QLabel("")
+        self.sys_bases.setWordWrap(True)
+        self.sys_bases.setTextFormat(Qt.TextFormat.RichText)
+        S.role(self.sys_bases, "meta")
+        lay.addWidget(self.sys_bases)
+        brow = QHBoxLayout()
+        rebuild = QPushButton(L("Reconstruire les bases…"))
+        S.variant(rebuild, "tertiary")
+        rebuild.clicked.connect(self._sys_rebuild)
+        self.btn_rebuild = rebuild
+        bases = QPushButton(L("Afficher les bases"))
+        S.variant(bases, "tertiary")
+        bases.clicked.connect(lambda: reveal(self.cfg.get("systems_dir", core.DEFAULTS["systems_dir"])))
+        brow.addWidget(rebuild)
+        brow.addWidget(bases)
+        brow.addStretch(1)
+        lay.addLayout(brow)
+        title = QLabel(L("Historique des échanges"))
+        S.role(title, "heading")
+        lay.addWidget(title)
+        self.sys_table = QTableWidget(0, 4)
+        self.sys_table.setHorizontalHeaderLabels([L("Date"), L("Opération"), L("Couche"), L("État")])
+        self.sys_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
+        self.sys_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+        self.sys_table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
+        self.sys_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        self.sys_table.verticalHeader().setVisible(False)
+        lay.addWidget(self.sys_table, 1)
+        orow = QHBoxLayout()
+        reveal_op = QPushButton(L("Afficher la sauvegarde dans le Finder"))
+        reveal_op.clicked.connect(self._sys_reveal)
+        orow.addWidget(reveal_op)
+        orow.addStretch(1)
+        lay.addLayout(orow)
+        self._sys_busy = False
+        self._sys_worker = None
+        return w
+
+    @property
+    def game_root(self) -> Path:
+        return core.game_dir(self.cfg["cs_dir"])
+
+    @property
+    def broot(self) -> Path:
+        return systems.backup_root(self.cfg["backup_dir"])
+
+    def refresh_system(self):
+        game = self.game_root
+        self.sysname = systems.active_system(game) if game.is_dir() else None
+        self.bases = systems.available_bases(self.cfg.get("systems_dir", core.DEFAULTS["systems_dir"]))
+        names = {systems.CS: "Community Shaders", systems.ENB: "ENB"}
+        lines, tone = [], "info"
+        if not game.is_dir():
+            lines.append(L("<b>⚠ Dossier du jeu introuvable</b> : {path}. Vérifiez les réglages et que le disque est "
+                           "branché.", path=game))
+            tone = "warning"
+        else:
+            if self.sysname:
+                lines.append(L("<b>Système actif</b> : {name}", name=names[self.sysname]))
+                tone = "success"
+            else:
+                lines.append(L("<b>Aucun système géré par csSETTINGS</b> : l'installation actuelle n'est pas encore "
+                               "suivie. Reprenez-la ou choisissez un système ci-dessous."))
+            problems = systems.prerequis(game)
+            if problems:
+                tone = "warning"
+                lines.append("<b>⚠</b> " + " ; ".join(problems))
+            else:
+                lines.append(L("Skyrim {v} détecté, SKSE présent.", v=systems.game_version(game)))
+            for layer in systems.installed(game):
+                try:
+                    v = systems.verify(game, layer)
+                except systems.SystemError_:
+                    continue
+                state = L("intact") if not (v["absents"] or v["modifiés"]) else \
+                    L("{m} modifié(s), {a} absent(s) depuis la pose", m=len(v["modifiés"]), a=len(v["absents"]))
+                lines.append(f"• {layer} : {state}")
+        self.sys_status.setText("<br>".join(lines))
+        self._tone(self.sys_status, tone)
+
+        self.sys_modes = {}
+        for name, b in self.btn_sys.items():
+            if name not in self.bases:
+                self.sys_modes[name] = "absent"
+                b.setText(L("{name} : base absente", name=names[name]))
+            elif self.sysname == name:
+                self.sys_modes[name] = "actif"
+                b.setText(L("✓ {name} (actif)", name=names[name]))
+            elif self.sysname is None and game.is_dir() and systems.adoptable(game, self.bases[name]):
+                self.sys_modes[name] = "adopt"
+                b.setText(L("Reprendre l'installation actuelle ({name})", name=names[name]))
+            else:
+                self.sys_modes[name] = "swap"
+                b.setText(L("Passer à {name}", name=names[name]) if self.sysname
+                          else L("Installer {name}", name=names[name]))
+        if self.bases:
+            info = []
+            for n, d in self.bases.items():
+                try:
+                    j = json.loads((d / systems.INFO).read_text(encoding="utf-8"))
+                except (OSError, ValueError):
+                    j = {}
+                info.append(L("<b>{name}</b> : {n} fichiers, construite le {date}", name=n, n=j.get("fichiers", "?"),
+                              date=j.get("date", "?")))
+            self.sys_bases.setText("<br>".join(info))
+        else:
+            self.sys_bases.setText(L("Aucune base neutre construite : cliquez sur « Reconstruire les bases… »."))
+
+        ops = systems.list_operations(self.broot)
+        kinds = {"install": L("Installation"), "remove": L("Retrait")}
+        self.sys_ops = ops
+        self.sys_table.setRowCount(len(ops))
+        for r, o in enumerate(ops):
+            vals = (o["name"].split("_install_")[0].split("_remove_")[0].replace("_", " "),
+                    kinds.get(o["type"], o["type"]), o["layer"], o["status"])
+            for c, v in enumerate(vals):
+                self.sys_table.setItem(r, c, QTableWidgetItem(v))
+
+    def _update_buttons(self):
+        """Active ou grise les boutons selon le jeu (lancé ?), le système actif et l'opération en cours."""
+        running = core.game_running()
+        busy = getattr(self, "_sys_busy", False)
+        sysname = getattr(self, "sysname", None)
+        self.btn_apply.setEnabled(self._cur() is not None and not running and sysname != systems.ENB and not busy)
+        self.cs_note.setVisible(sysname == systems.ENB)
+        self.btn_enb_apply.setEnabled(self._enb_cur() is not None and not running and sysname == systems.ENB
+                                      and not busy)
+        self.enb_note.setVisible(sysname != systems.ENB)
+        for name, b in self.btn_sys.items():
+            b.setEnabled(self.sys_modes.get(name) in ("swap", "adopt") and not running and not busy)
+        self.btn_sys_off.setEnabled(sysname is not None and not running and not busy)
+        self.btn_rebuild.setEnabled(not busy)
+
+    def _sys_run(self, fn, done_text, then=None):
+        """Lance une opération longue hors du fil de l'interface, une seule à la fois."""
+        self._sys_busy = True
+        self._update_buttons()
+        self.say(L("Opération en cours… ne fermez pas l'application ni le disque."))
+        wk = Worker(fn)
+        self._sys_worker = wk
+
+        def finished(res):
+            self._sys_busy = False
+            if then:
+                then(res)
+            else:
+                self.say(done_text)
+                self.refresh()
+            self._update_buttons()
+
+        def failed(err):
+            self._sys_busy = False
+            self.say(L("✕ {err}", err=err))
+            QMessageBox.warning(self, APP, L("L'opération a échoué : {err}. Le jeu a été remis dans son état d'avant "
+                                             "si l'échec est survenu en cours de route ; les sauvegardes sont dans "
+                                             "{dir}.", err=err, dir=self.broot))
+            self.refresh()
+            self._update_buttons()
+
+        wk.done.connect(finished)
+        wk.failed.connect(failed)
+        wk.start()
+
+    def _sys_go(self, target: str):
+        mode = self.sys_modes.get(target)
+        if mode not in ("swap", "adopt") or self._sys_busy or self._game_state():
+            return
+        game, bases, cur, broot = self.game_root, self.bases, self.sysname, self.broot
+        names = {systems.CS: "Community Shaders", systems.ENB: "ENB"}
+
+        def plan(_p):
+            return systems.plan_swap(game, cur, target, bases[target])
+
+        def confirm(pl):
+            if mode == "adopt":
+                text = L("Reprendre l'installation actuelle comme « {name} » : {n} fichiers identiques à la base seront "
+                         "suivis (rien n'est recopié ni modifié). Ils seront retirés avec ce système lors d'un échange.",
+                         name=names[target], n=pl["identiques"])
+            else:
+                text = L("Passer à « {name} » ?\n\n• {r} fichier(s) de l'ancien système retirés, dont {a} modifiés "
+                         "depuis la pose (mis de côté dans la sauvegarde)\n• {add} fichier(s) ajoutés, {rep} remplacés "
+                         "(originaux sauvegardés)\n\nSauvegardes : {dir}", name=names[target], r=pl["retire"],
+                         a=len(pl["mis_de_côté"]), add=pl["ajoute"], rep=pl["remplace"], dir=broot)
+            if QMessageBox.question(self, APP, text) != QMessageBox.StandardButton.Yes:
+                self._update_buttons()
+                return
+
+            def job(_p):
+                running = core.game_running
+                if mode == "adopt":
+                    ops = []
+                    if systems.COMMUN in bases and systems.COMMUN not in systems.installed(game):
+                        ops.append(systems.install(game, systems.COMMUN, bases[systems.COMMUN], broot,
+                                                   is_running=running, adopt=True))
+                    ops.append(systems.install(game, target, bases[target], broot, is_running=running, adopt=True))
+                    return ops
+                return systems.swap(game, cur, target, bases, broot, is_running=running)
+
+            self._sys_run(job, L("Système « {name} » en place. Sauvegardes : {dir}", name=names[target], dir=broot))
+
+        self._sys_run(plan, "", then=confirm)
+
+    def _sys_remove(self):
+        cur = self.sysname
+        if not cur or self._sys_busy or self._game_state():
+            return
+        if QMessageBox.question(self, APP, L("Retirer le système « {name} » ? Ce que vous avez modifié est mis de côté "
+                                             "dans la sauvegarde et les fichiers d'origine remplacés sont remis. Sans "
+                                             "système, le jeu n'aura plus de shaders de rendu.", name=cur)) != \
+                QMessageBox.StandardButton.Yes:
+            return
+        game, broot = self.game_root, self.broot
+        self._sys_run(lambda _p: systems.remove(game, cur, broot, is_running=core.game_running),
+                      L("Système « {name} » retiré. Sauvegardes : {dir}", name=cur, dir=broot))
+
+    def _sys_rebuild(self):
+        if self._sys_busy:
+            return
+        root = Path(self.cfg.get("systems_dir", core.DEFAULTS["systems_dir"]))
+        shaders = root.parent
+        if QMessageBox.question(self, APP, L("Reconstruire les bases neutres à partir de {src} ? Les bases actuelles "
+                                             "sont mises de côté (dossier _anciennes), jamais supprimées.",
+                                             src=shaders)) != QMessageBox.StandardButton.Yes:
+            return
+
+        def job(_p):
+            stamp = time.strftime("%Y-%m-%d_%H%M%S")
+            made = {}
+            recipes = systems.recettes(shaders)
+            for n, srcs in recipes.items():                      # tout vérifier avant de déplacer quoi que ce soit
+                for s in srcs:
+                    if not s.path.is_dir():
+                        raise systems.SystemError_(L("Paquet introuvable : {path}", path=s.path))
+            root.mkdir(parents=True, exist_ok=True)
+            for n, srcs in recipes.items():
+                if (root / n).exists():
+                    (root / "_anciennes").mkdir(exist_ok=True)
+                    (root / n).rename(root / "_anciennes" / f"{stamp}_{n}")
+                made[n] = systems.assemble(root / n, srcs, n)
+            return made
+
+        self._sys_run(job, "", then=lambda made: (self.say(L("Bases reconstruites : {list}", list=", ".join(
+            f"{n} ({c})" for n, c in made.items()))), self.refresh()))
+
+    def _sys_reveal(self):
+        r = self.sys_table.currentRow()
+        if 0 <= r < len(self.sys_ops):
+            reveal(self.sys_ops[r]["path"])
 
     # ---------------------------------------------------------- onglet sauvegardes
     def _backups_tab(self):
@@ -777,6 +1202,8 @@ class Main(QWidget):
         self.list.setCurrentRow(idx)
         if not self.presets:
             self._show(-1)
+        self.refresh_enb()
+        self.refresh_system()
         self.backups = core.list_backups(self.cfg)
         self.btable.setRowCount(len(self.backups))
         for r, b in enumerate(self.backups):
@@ -786,6 +1213,20 @@ class Main(QWidget):
             for c, v in enumerate(vals):
                 self.btable.setItem(r, c, QTableWidgetItem(v))
         self._game_state()
+
+    def refresh_enb(self):
+        cur = self._enb_cur().name if self._enb_cur() else None
+        lib = self.cfg.get("enb_library", core.DEFAULTS["enb_library"])
+        self.enb_presets = core.list_enb_presets(lib)
+        self.enb_active = core.active_preset(lib)
+        self.enb_list.clear()
+        for p in self.enb_presets:
+            self.enb_list.addItem(QListWidgetItem(f"{'● ' if p.name == self.enb_active else '   '}{p.name}"))
+        self.enb_hint.setText(L("Bibliothèque : {lib}", lib=lib))
+        idx = next((i for i, p in enumerate(self.enb_presets) if p.name == cur), 0 if self.enb_presets else -1)
+        self.enb_list.setCurrentRow(idx)
+        if not self.enb_presets:
+            self._enb_show(-1)
 
     def _cur(self):
         r = self.list.currentRow()
@@ -799,6 +1240,7 @@ class Main(QWidget):
         p = self._cur()
         for b in (self.btn_apply, self.btn_remove, self.btn_reveal):
             b.setEnabled(p is not None)
+        self._update_buttons()
         self._show_compat(p)
         if not p:
             self.badges.setText("")
@@ -897,7 +1339,7 @@ class Main(QWidget):
         running = core.game_running()
         self.game.setText(L("⚠ Jeu lancé : fermez-le avant d'appliquer") if running else L("Jeu fermé"))
         S.status(self.game, "warning" if running else "success")
-        self.btn_apply.setEnabled(self._cur() is not None and not running)
+        self._update_buttons()
         return running
 
     def say(self, text: str):
@@ -906,7 +1348,7 @@ class Main(QWidget):
     # ---------------------------------------------------------- actions
     def apply(self):
         p = self._cur()
-        if not p or self._game_state():
+        if not p or self._game_state() or self.sysname == systems.ENB:
             return
         c = self.compats.get(p.name)
         if c and c.frame_gen and QMessageBox.question(
