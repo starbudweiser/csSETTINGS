@@ -364,11 +364,8 @@ def check_preset(preset_path: Path, ref: dict) -> Compat:
                     c.unknown_options += len(set(v) - sections[k])
             elif k not in CORE_SECTIONS and not _feature_known(k, features):
                 c.unknown_features.append(k)
-        boot = settings.get("Disable at Boot")
-        if isinstance(boot, dict):
-            known = features | {_squash(s) for s in sections}
-            c.unknown_features += [k for k in boot if _squash(k) not in known
-                                   and not any(_squash(k) == _squash(u) for u in c.unknown_features)]
+        # « Disable at Boot » garde les noms de features d'anciens presets (XeGTAO, PhysicalSky…) : un nom
+        # inconnu n'y a aucun effet, ce n'est pas une feature manquante du Community Shaders installé.
         c.missing_features = [k for k in sections if k not in settings and k not in CORE_SECTIONS
                               and _feature_known(k, features)]
         c.preset_version = str(settings.get("Version", "")).replace("-", ".")

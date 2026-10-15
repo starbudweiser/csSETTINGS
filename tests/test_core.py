@@ -79,7 +79,7 @@ def test_compatibilite(tmp_path):
     (bad / "PostProcessing" / "p.json").write_text(json.dumps({"Vignette": {}, "Film Grain": {}, "preset_name": "p"}))
     c = core.check_preset(bad, ref)
     assert c.level == "warning"
-    assert c.unknown_features == ["Physical Sky", "XeGTAO"]
+    assert c.unknown_features == ["Physical Sky"]       # « Disable at Boot » : XeGTAO ignoré
     assert c.missing_features == ["Advanced Skin", "Post Processing"] and c.unknown_options == 1 and c.unknown_pp == ["Film Grain"]
     # la référence en cache sert tant que la version de CS ne change pas
     (cs / "SettingsUser.json").write_text(json.dumps({"Post Processing": {"Film Grain": {}}}))
