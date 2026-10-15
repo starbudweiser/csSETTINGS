@@ -340,6 +340,29 @@ def swap(game_dir: Path, current: str | None, target: str, bases: dict[str, Path
     return ops
 
 
+def drop_files(game_dir: Path, layer: str, rels: list[str], backup_root: Path) -> Path:
+    """Retire de la couche installée des fichiers précis (ex. un plugin devenu indésirable) : copie vérifiée dans la
+    sauvegarde (« retires/ »), suppression dans le jeu, retrait du manifeste. Les autres fichiers ne bougent pas."""
+    game = Path(game_dir)
+    manifest = read_manifest(game)
+    entry = manifest["layers"].get(layer)
+    if entry is None:
+        raise SystemError_(f"« {layer} » n'est pas installé.")
+    op = _new_op(Path(backup_root), "drop", layer, {"manifest_avant": manifest})
+    done = []
+    for rel in rels:
+        d = game / rel
+        if d.is_file():
+            _stash(d, op, "retires", rel)
+            d.unlink()
+        entry["files"].pop(rel, None)
+        done.append(rel)
+    _prune(game, done)
+    _write_manifest(game, manifest)
+    _journal(op, {"status": "terminé", "supprimés": done})
+    return op
+
+
 def verify(game_dir: Path, layer: str) -> dict[str, list[str]]:
     """État d'une couche installée : fichiers absents, modifiés depuis la pose."""
     game = Path(game_dir)
@@ -446,6 +469,9 @@ USER_SETTINGS = ("Data/SKSE/Plugins/CommunityShaders/SettingsUser.json", "Data/S
 SHARED = ("Data/SKSE/Plugins/SSEDisplayTweaks.*", "Data/SKSE/Plugins/versionlib-*")
 # Plugins ENB de KiLoader (ENB Helper, ENB Extender) : la variante Legacy 1.6.0 est la seule compatible 1.6.1170 et
 # elle accompagne les presets ENB / Effects 11, pas le socle ; les poser ici risquerait d'écraser la bonne version.
+# ENB Helper fourni avec ENBSeries : ENB Helper refuse tout autre que celui d'ENB Extender (Legacy 1.6.0, dans
+# Data/KiLoader/Plugins) et propose de quitter le jeu (« Incompatible ENB Helper detected »).
+ENB_HELPERS = ("Data/SKSE/plugins/ENBHelper*",)
 KILOADER_ENB = ("Data/KiLoader/Plugins/ENB*", "Data/KiLoader/Plugins/KiENBExtender*")
 
 
@@ -457,7 +483,7 @@ def recettes(shaders_root: Path) -> dict[str, list[Source]]:
     return {
         COMMUN: [Source(r / "KILOADER", prefix="Data/", exclude=KILOADER_ENB), Source(mdlss, include=SHARED)],
         CS: [Source(mdlss, exclude=SHARED + USER_SETTINGS), Source(bottled, prefix="Data/", exclude=USER_SETTINGS)],
-        ENB: [Source(r / "ENBSERIES" / "ENBSERIES 0.505 + DLSS", exclude=USER_SETTINGS)],
+        ENB: [Source(r / "ENBSERIES" / "ENBSERIES 0.505 + DLSS", exclude=USER_SETTINGS + ENB_HELPERS)],
     }
 
 

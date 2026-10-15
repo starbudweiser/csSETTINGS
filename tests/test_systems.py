@@ -162,3 +162,19 @@ def test_adopt_ne_copie_rien(world):
     after = {p.relative_to(game).as_posix(): p.read_bytes() for p in game.rglob("*") if p.is_file()}
     assert {k: v for k, v in after.items() if k != sy.MANIFEST} == before
     assert list(sy.read_manifest(game)["layers"]["CS"]["files"]) == ["Data/Shaders/Features/a.ini"]
+
+
+def test_drop_files_et_helpers_exclus(world, tmp_path):
+    game, bases, sauv = world
+    put(game, {"Data/SKSE/plugins/ENBHelperPlus.dll": "h"})
+    put(bases["ENB"], {"Data/SKSE/plugins/ENBHelperPlus.dll": "h"})
+    sy.install(game, "ENB", bases["ENB"], sauv, adopt=True)
+    op = sy.drop_files(game, "ENB", ["Data/SKSE/plugins/ENBHelperPlus.dll"], sauv)
+    assert not (game / "Data/SKSE/plugins/ENBHelperPlus.dll").exists()
+    assert (op / "retires/Data/SKSE/plugins/ENBHelperPlus.dll").read_text() == "h"          # copie gardée
+    assert "Data/SKSE/plugins/ENBHelperPlus.dll" not in sy.read_manifest(game)["layers"]["ENB"]["files"]
+    assert sy.verify(game, "ENB") == {"absents": [], "modifiés": []}
+    src = tmp_path / "pkg"; put(src, {"Data/SKSE/plugins/ENBHelperSE.dll": "x", "Data/SKSE/plugins/Autre.dll": "y"})
+    dest = tmp_path / "base"
+    sy.assemble(dest, [sy.Source(src, exclude=sy.ENB_HELPERS)], "ENB")
+    assert (dest / "Data/SKSE/plugins/Autre.dll").exists() and not (dest / "Data/SKSE/plugins/ENBHelperSE.dll").exists()
