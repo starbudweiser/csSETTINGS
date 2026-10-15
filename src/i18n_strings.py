@@ -348,11 +348,10 @@ TR = {
         'The ENB system is not active: switch to it from the System tab to apply an ENB preset.',
         'Il sistema ENB non è attivo: passa a ENB dalla scheda Sistema per applicare un preset ENB.',
         'El sistema ENB no está activo: pase a él desde la pestaña Sistema para aplicar un preset ENB.'),
-    ('Avant chaque application, enbseries.ini et le dossier enbseries en place sont déplacés dans la sauvegarde, '
-     "rien n'est effacé. Aucun fichier du preset n'est modifié."): (
-        'Before each application, the enbseries.ini and enbseries folder in place are moved into the backup, nothing is deleted. No file of the preset is modified.',
-        'Prima di ogni applicazione, enbseries.ini e la cartella enbseries in uso vengono spostati nel backup, nulla viene eliminato. Nessun file del preset viene modificato.',
-        'Antes de cada aplicación, enbseries.ini y la carpeta enbseries en uso se mueven a la copia de seguridad, no se borra nada. Ningún archivo del preset se modifica.'),
+    "Avant chaque application, enbseries.ini et le dossier enbseries en place sont déplacés dans la sauvegarde, rien n'est effacé, sauf le cache enbcache de la racine du jeu, supprimé pour que le nouveau preset soit recompilé. Aucun fichier du preset n'est modifié.": (
+        "Before each application, the enbseries.ini and enbseries folder in place are moved into the backup, nothing is deleted, except the enbcache folder at the game root, removed so the new preset is recompiled. No file of the preset is modified.",
+        "Prima di ogni applicazione, enbseries.ini e la cartella enbseries in uso vengono spostati nel backup, nulla viene eliminato, tranne la cache enbcache nella radice del gioco, rimossa perché il nuovo preset venga ricompilato. Nessun file del preset viene modificato.",
+        "Antes de cada aplicación, enbseries.ini y la carpeta enbseries en uso se mueven a la copia de seguridad, no se borra nada, salvo la caché enbcache de la raíz del juego, eliminada para que el nuevo preset se recompile. Ningún archivo del preset se modifica."),
     'Appliquer ce preset ENB': (
         'Apply this ENB preset',
         'Applica questo preset ENB',

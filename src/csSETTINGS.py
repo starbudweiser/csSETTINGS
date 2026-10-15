@@ -794,7 +794,8 @@ class Main(QWidget):
         self.enb_details.setTextFormat(Qt.TextFormat.RichText)
         self.enb_details.setAlignment(Qt.AlignmentFlag.AlignTop)
         reassure = QLabel(L("Avant chaque application, enbseries.ini et le dossier enbseries en place sont déplacés "
-                            "dans la sauvegarde, rien n'est effacé. Aucun fichier du preset n'est modifié."))
+                            "dans la sauvegarde, rien n'est effacé, sauf le cache enbcache de la racine du jeu, "
+                            "supprimé pour que le nouveau preset soit recompilé. Aucun fichier du preset n'est modifié."))
         reassure.setWordWrap(True)
         S.role(reassure, "subtle")
         rl.addWidget(self.enb_name)

@@ -177,6 +177,7 @@ def test_presets_enb(tmp_path):
     root = tmp_path / "jeu"
     (root / "enbseries").mkdir(); (root / "enbseries.ini").write_text("ancien")
     (root / "enbseries" / "enbeffect.fx").write_text("ancien"); (root / "enbseries" / "Sat.dllplugin").write_text("module")
+    (root / "enbcache").mkdir(); (root / "enbcache" / "datavs.enbc").write_text("cache de l'ancien preset")
     lib = tmp_path / "enb"
     (lib / "Doux" / "enbseries").mkdir(parents=True); (lib / "Doux" / "enbseries.ini").write_text("neuf")
     (lib / "Doux" / "enbseries" / "enbeffect.fx").write_text("neuf")
@@ -187,6 +188,7 @@ def test_presets_enb(tmp_path):
     assert (root / "enbseries.ini").read_text() == "neuf" and (root / "enbseries" / "enbeffect.fx").read_text() == "neuf"
     assert (root / "enbseries" / "Sat.dllplugin").read_text() == "module"            # module d'installation gardé
     assert (saved / "ENB" / "enbseries.ini").read_text() == "ancien"                  # rien d'effacé
+    assert not (root / "enbcache").exists()                                           # cache d'ENB supprimé
     assert core.active_preset(str(lib)) == "Doux"
     dest = core.save_current_enb(cfg, "Mon ENB")
     assert (dest / "enbseries.ini").read_text() == "neuf" and not (dest / "enbseries" / "Sat.dllplugin").exists()

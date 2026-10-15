@@ -33,6 +33,7 @@ META = "preset.json"
 # Partie ENB facultative d'un preset (Effects 11) : ENB/enbseries.ini et ENB/enbseries/, posés à la racine du jeu
 ENB = "ENB"
 ENB_ITEMS = ("enbseries.ini", "enbseries")
+ENB_CACHE = "enbcache"          # à la racine du jeu, supprimé à chaque nouveau preset ENB (recréé au lancement)
 STATE = ".preset_actif"
 # Caches propres à une machine : jamais copiés depuis une archive
 SKIP = {"UnifiedWaterCache", "UWLoadOrder.hash", "ShaderCache", ".DS_Store"}
@@ -232,9 +233,11 @@ def _keep_user_sections(settings: Path, previous: Path) -> None:
 
 def _apply_enb(cfg: dict, enb_src: Path, enb_saved: Path) -> None:
     """Remplace le preset ENB du jeu. L'actuel (enbseries.ini, enbseries/) est déplacé dans la sauvegarde,
-    rien n'est effacé ; restaurer cette sauvegarde le remet en place."""
+    rien n'est effacé ; restaurer cette sauvegarde le remet en place. Seul le cache enbcache/ est supprimé."""
     root = game_dir(cfg["cs_dir"])
     enb_saved.mkdir(parents=True, exist_ok=True)
+    # le cache d'ENB (shaders compilés avec l'ancien preset) doit être refait : sans cela, l'ancien rendu persiste
+    shutil.rmtree(root / ENB_CACHE, ignore_errors=True)
     for name in ENB_ITEMS:
         if (root / name).exists():
             shutil.move(str(root / name), str(enb_saved / name))
