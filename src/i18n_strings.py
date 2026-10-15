@@ -562,4 +562,10 @@ TR = {
         'Install {name}',
         'Installa {name}',
         'Instalar {name}'),
+    "Un processus ressemble au jeu : {proc}. Si Skyrim est bien fermé (seul CrossOver est ouvert), continuer quand "
+    "même ?": (
+        "A process looks like the game: {proc}. If Skyrim is really closed (only CrossOver is open), continue anyway?",
+        "Un processo sembra il gioco: {proc}. Se Skyrim è davvero chiuso (è aperto solo CrossOver), continuare comunque?",
+        "Un proceso parece el juego: {proc}. Si Skyrim está realmente cerrado (solo CrossOver está abierto), "
+        "¿continuar de todos modos?"),
 }

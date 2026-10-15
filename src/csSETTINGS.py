@@ -1038,8 +1038,8 @@ class Main(QWidget):
                                       and not busy)
         self.enb_note.setVisible(sysname != systems.ENB)
         for name, b in self.btn_sys.items():
-            b.setEnabled(self.sys_modes.get(name) in ("swap", "adopt") and not running and not busy)
-        self.btn_sys_off.setEnabled(sysname is not None and not running and not busy)
+            b.setEnabled(self.sys_modes.get(name) in ("swap", "adopt") and not busy)
+        self.btn_sys_off.setEnabled(sysname is not None and not busy)
         self.btn_rebuild.setEnabled(not busy)
 
     def _sys_run(self, fn, done_text, then=None):
@@ -1072,9 +1072,24 @@ class Main(QWidget):
         wk.failed.connect(failed)
         wk.start()
 
+    def _sys_guard(self):
+        """Fonction « le jeu tourne-t-il ? » à donner au moteur, ou None si l'utilisateur annule. Si un processus
+        ressemble au jeu, il est montré et l'utilisateur peut affirmer que le jeu est fermé (seul CrossOver ouvert)."""
+        procs = core.game_processes()
+        if not procs:
+            return core.game_running
+        if QMessageBox.question(self, APP, L("Un processus ressemble au jeu : {proc}. Si Skyrim est bien fermé (seul "
+                                             "CrossOver est ouvert), continuer quand même ?",
+                                             proc=procs[0][1])) != QMessageBox.StandardButton.Yes:
+            return None
+        return lambda: False
+
     def _sys_go(self, target: str):
         mode = self.sys_modes.get(target)
-        if mode not in ("swap", "adopt") or self._sys_busy or self._game_state():
+        if mode not in ("swap", "adopt") or self._sys_busy:
+            return
+        running = self._sys_guard()
+        if running is None:
             return
         game, bases, cur, broot = self.game_root, self.bases, self.sysname, self.broot
         names = {systems.CS: "Community Shaders", systems.ENB: "ENB"}
@@ -1097,7 +1112,6 @@ class Main(QWidget):
                 return
 
             def job(_p):
-                running = core.game_running
                 if mode == "adopt":
                     ops = []
                     if systems.COMMUN in bases and systems.COMMUN not in systems.installed(game):
@@ -1113,7 +1127,10 @@ class Main(QWidget):
 
     def _sys_remove(self):
         cur = self.sysname
-        if not cur or self._sys_busy or self._game_state():
+        if not cur or self._sys_busy:
+            return
+        running = self._sys_guard()
+        if running is None:
             return
         if QMessageBox.question(self, APP, L("Retirer le système « {name} » ? Ce que vous avez modifié est mis de côté "
                                              "dans la sauvegarde et les fichiers d'origine remplacés sont remis. Sans "
@@ -1121,7 +1138,7 @@ class Main(QWidget):
                 QMessageBox.StandardButton.Yes:
             return
         game, broot = self.game_root, self.broot
-        self._sys_run(lambda _p: systems.remove(game, cur, broot, is_running=core.game_running),
+        self._sys_run(lambda _p: systems.remove(game, cur, broot, is_running=running),
                       L("Système « {name} » retiré. Sauvegardes : {dir}", name=cur, dir=broot))
 
     def _sys_rebuild(self):

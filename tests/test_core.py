@@ -192,3 +192,19 @@ def test_presets_enb(tmp_path):
     assert (dest / "enbseries.ini").read_text() == "neuf" and not (dest / "enbseries" / "Sat.dllplugin").exists()
     with pytest.raises(FileExistsError):
         core.save_current_enb(cfg, "Mon ENB")
+
+def test_detection_du_jeu(monkeypatch):
+    """Seul un processus qui lance SkyrimSE.exe compte : ni un outil qui le cite, ni CrossOver seul."""
+    import subprocess
+    bruit = ("  501 /bin/zsh -c pgrep -if SkyrimSE.exe\n"
+             "  502 /opt/homebrew/bin/node server.js --watch SkyrimSE.exe\n"
+             "  503 /usr/bin/python3 check.py C:\\Games\\SkyrimSE.exe\n"
+             "  504 C:\\windows\\system32\\winedevice.exe\n"
+             "  505 /Applications/CrossOver Preview.app/Contents/MacOS/CrossOver Preview\n")
+    fake = lambda out: (lambda *a, **k: subprocess.CompletedProcess(a, 0, out, ""))
+    monkeypatch.setattr(core.subprocess, "run", fake(bruit))
+    assert core.game_running() is False
+    monkeypatch.setattr(core.subprocess, "run", fake(bruit + "  777 /x/wine64-preloader C:\\Games\\Skyrim Special Edition\\SkyrimSE.exe\n"))
+    assert [pid for pid, _ in core.game_processes()] == [777]
+    monkeypatch.setattr(core.subprocess, "run", fake("  778 C:\\Games\\Skyrim Special Edition\\SkyrimSE.exe\n"))
+    assert core.game_running() is True

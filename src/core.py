@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import subprocess
 import tempfile
@@ -105,13 +106,32 @@ def active_preset(library: str) -> str:
         return ""
 
 
-def game_running() -> bool:
-    """Vrai si SkyrimSE.exe tourne (dans CrossOver, le processus Wine garde le nom de l'exécutable)."""
+def game_processes() -> list[tuple[int, str]]:
+    """Processus du jeu (pid, ligne de commande). Compte seulement un processus dont l'exécutable lancé est
+    SkyrimSE.exe (chemin Windows de Wine, ou Wine suivi de ce chemin) : un shell, un script ou un outil qui cite
+    « SkyrimSE.exe » dans ses arguments, ou un simple CrossOver ouvert, ne comptent pas."""
     try:
-        r = subprocess.run(["pgrep", "-if", "SkyrimSE.exe"], capture_output=True, text=True, timeout=5)
-        return r.returncode == 0
+        r = subprocess.run(["ps", "-axo", "pid=,args="], capture_output=True, text=True, timeout=5)
     except (OSError, subprocess.SubprocessError):
-        return False
+        return []
+    out = []
+    for line in r.stdout.splitlines():
+        m = re.match(r"\s*(\d+)\s+(.*)$", line)
+        if not m or int(m[1]) == os.getpid():
+            continue
+        args = m[2]
+        end = args.lower().find(".exe")
+        if end < 0 or re.split(r"[\\/]", args[:end + 4])[-1].lower() != "skyrimse.exe":
+            continue
+        first = os.path.basename(args.split(None, 1)[0].replace("\\", "/")).lower()
+        if re.match(r"[a-z]:[\\/]", args, re.I) or "wine" in first or first == "skyrimse.exe":
+            out.append((int(m[1]), args[:120]))
+    return out
+
+
+def game_running() -> bool:
+    """Vrai si SkyrimSE.exe tourne (dans CrossOver, c'est un processus Wine dont les arguments nomment l'exécutable)."""
+    return bool(game_processes())
 
 
 def game_dir(cs_dir: str) -> Path:
