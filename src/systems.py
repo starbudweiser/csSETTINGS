@@ -239,6 +239,8 @@ def install(game_dir: Path, layer: str, src: Path, backup_root: Path, *, is_runn
             if rel in plan.same:
                 files[rel] = {"fp": fp, "pre": not adopt}
                 continue
+            if adopt:                                      # reprise : on ne suit que ce qui est déjà identique
+                continue
             if rel in plan.replace:
                 _stash(d, op, "remplaces", rel)
                 replaced.append(rel)

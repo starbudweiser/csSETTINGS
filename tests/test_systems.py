@@ -152,3 +152,13 @@ def test_plan_swap_adopt_et_historique(world):
     assert not (game / "Data/SKSE/Plugins/CommunityShaders.dll").exists() and (game / "d3d11.dll").read_text() == "enb"
     ops = sy.list_operations(sauv)
     assert {(o["type"], o["layer"], o["status"]) for o in ops} >= {("remove", "CS", "terminé"), ("install", "ENB", "terminé")}
+
+
+def test_adopt_ne_copie_rien(world):
+    game, bases, sauv = world
+    put(game, {"Data/Shaders/Features/a.ini": "a"})                          # le reste de la base manque dans le jeu
+    before = {p.relative_to(game).as_posix(): p.read_bytes() for p in game.rglob("*") if p.is_file()}
+    sy.install(game, "CS", bases["CS"], sauv, adopt=True)
+    after = {p.relative_to(game).as_posix(): p.read_bytes() for p in game.rglob("*") if p.is_file()}
+    assert {k: v for k, v in after.items() if k != sy.MANIFEST} == before
+    assert list(sy.read_manifest(game)["layers"]["CS"]["files"]) == ["Data/Shaders/Features/a.ini"]
