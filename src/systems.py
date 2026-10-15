@@ -426,6 +426,7 @@ class Source:
     prefix: str = ""                      # ajouté devant chaque chemin (ex. « Data/ »)
     include: tuple[str, ...] = ()         # motifs fnmatch sur le chemin final ; vide = tout
     exclude: tuple[str, ...] = ()
+    patches: tuple[tuple[str, str, str], ...] = ()   # (chemin final, texte à remplacer, remplacement) après copie
 
 
 def assemble(dest: Path, sources: list[Source], name: str, notes: str = "") -> int:
@@ -451,6 +452,12 @@ def assemble(dest: Path, sources: list[Source], name: str, notes: str = "") -> i
                 out = tmp / final
                 out.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(f, out)
+                for target, old, new in s.patches:
+                    if final == target:
+                        text = out.read_text(encoding="utf-8")
+                        if old not in text:
+                            raise SystemError_(f"Correctif impossible : « {old} » absent de {final}")
+                        out.write_text(text.replace(old, new), encoding="utf-8")
                 count += 1
         count = len(files_of(tmp))                  # fichiers distincts (un paquet suivant peut en écraser un autre)
         (tmp / INFO).write_text(json.dumps({
@@ -472,6 +479,8 @@ SHARED = ("Data/SKSE/Plugins/SSEDisplayTweaks.*", "Data/SKSE/Plugins/versionlib-
 # ENB Helper fourni avec ENBSeries : ENB Helper refuse tout autre que celui d'ENB Extender (Legacy 1.6.0, dans
 # Data/KiLoader/Plugins) et propose de quitter le jeu (« Incompatible ENB Helper detected »).
 ENB_HELPERS = ("Data/SKSE/plugins/ENBHelper*",)
+# La Frame Generation appelle D3D12CreateDevice, absent de DXMT (CrossOver) : plantage E_NOINTERFACE au lancement.
+ENB_PATCHES = (("Data/SKSE/plugins/DynamicShaderFrameGen.ini", "FrameGeneration=1", "FrameGeneration=0"),)
 KILOADER_ENB = ("Data/KiLoader/Plugins/ENB*", "Data/KiLoader/Plugins/KiENBExtender*")
 
 
@@ -483,7 +492,8 @@ def recettes(shaders_root: Path) -> dict[str, list[Source]]:
     return {
         COMMUN: [Source(r / "KILOADER", prefix="Data/", exclude=KILOADER_ENB), Source(mdlss, include=SHARED)],
         CS: [Source(mdlss, exclude=SHARED + USER_SETTINGS), Source(bottled, prefix="Data/", exclude=USER_SETTINGS)],
-        ENB: [Source(r / "ENBSERIES" / "ENBSERIES 0.505 + DLSS", exclude=USER_SETTINGS + ENB_HELPERS)],
+        ENB: [Source(r / "ENBSERIES" / "ENBSERIES 0.505 + DLSS", exclude=USER_SETTINGS + ENB_HELPERS,
+                     patches=ENB_PATCHES)],
     }
 
 

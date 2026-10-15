@@ -178,3 +178,13 @@ def test_drop_files_et_helpers_exclus(world, tmp_path):
     dest = tmp_path / "base"
     sy.assemble(dest, [sy.Source(src, exclude=sy.ENB_HELPERS)], "ENB")
     assert (dest / "Data/SKSE/plugins/Autre.dll").exists() and not (dest / "Data/SKSE/plugins/ENBHelperSE.dll").exists()
+
+
+def test_assemble_correctifs(tmp_path):
+    src = tmp_path / "pkg"; put(src, {"Data/x.ini": "[A]\nFrameGeneration=1\n"})
+    dest = tmp_path / "base"
+    sy.assemble(dest, [sy.Source(src, patches=(("Data/x.ini", "FrameGeneration=1", "FrameGeneration=0"),))], "ENB")
+    assert (dest / "Data/x.ini").read_text() == "[A]\nFrameGeneration=0\n" and "=1" in (src / "Data/x.ini").read_text()
+    with pytest.raises(sy.SystemError_, match="Correctif"):
+        sy.assemble(tmp_path / "b2", [sy.Source(src, patches=(("Data/x.ini", "absent", "x"),))], "ENB")
+    assert not (tmp_path / "b2").exists() and not (tmp_path / "b2.en_construction").exists()
