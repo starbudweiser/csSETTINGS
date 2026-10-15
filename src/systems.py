@@ -476,11 +476,13 @@ USER_SETTINGS = ("Data/SKSE/Plugins/CommunityShaders/SettingsUser.json", "Data/S
 SHARED = ("Data/SKSE/Plugins/SSEDisplayTweaks.*", "Data/SKSE/Plugins/versionlib-*")
 # Plugins ENB de KiLoader (ENB Helper, ENB Extender) : la variante Legacy 1.6.0 est la seule compatible 1.6.1170 et
 # elle accompagne les presets ENB / Effects 11, pas le socle ; les poser ici risquerait d'écraser la bonne version.
-# ENB Helper fourni avec ENBSeries : ENB Helper refuse tout autre que celui d'ENB Extender (Legacy 1.6.0, dans
-# Data/KiLoader/Plugins) et propose de quitter le jeu (« Incompatible ENB Helper detected »).
-ENB_HELPERS = ("Data/SKSE/plugins/ENBHelper*",)
-# La Frame Generation appelle D3D12CreateDevice, absent de DXMT (CrossOver) : plantage E_NOINTERFACE au lancement.
-ENB_PATCHES = (("Data/SKSE/plugins/DynamicShaderFrameGen.ini", "FrameGeneration=1", "FrameGeneration=0"),)
+# Fournis avec ENBSeries 0.505 + DLSS mais inutilisables ici :
+# - ENB Helper : refuse tout autre helper que celui d'ENB Extender (Legacy 1.6.0, dans Data/KiLoader/Plugins) et
+#   propose de quitter le jeu (« Incompatible ENB Helper detected ») ;
+# - DynamicShaderFrameGen : crée toujours un proxy D3D12, absent de DXMT (CrossOver) → plantage E_NOINTERFACE, même
+#   avec FrameGeneration=0.
+ENB_INCOMPATIBLES = ("Data/SKSE/plugins/ENBHelper*", "Data/SKSE/plugins/DynamicShaderFrameGen.*")
+ENB_PATCHES: tuple = ()
 KILOADER_ENB = ("Data/KiLoader/Plugins/ENB*", "Data/KiLoader/Plugins/KiENBExtender*")
 
 
@@ -492,7 +494,7 @@ def recettes(shaders_root: Path) -> dict[str, list[Source]]:
     return {
         COMMUN: [Source(r / "KILOADER", prefix="Data/", exclude=KILOADER_ENB), Source(mdlss, include=SHARED)],
         CS: [Source(mdlss, exclude=SHARED + USER_SETTINGS), Source(bottled, prefix="Data/", exclude=USER_SETTINGS)],
-        ENB: [Source(r / "ENBSERIES" / "ENBSERIES 0.505 + DLSS", exclude=USER_SETTINGS + ENB_HELPERS,
+        ENB: [Source(r / "ENBSERIES" / "ENBSERIES 0.505 + DLSS", exclude=USER_SETTINGS + ENB_INCOMPATIBLES,
                      patches=ENB_PATCHES)],
     }
 

@@ -176,7 +176,7 @@ def test_drop_files_et_helpers_exclus(world, tmp_path):
     assert sy.verify(game, "ENB") == {"absents": [], "modifiés": []}
     src = tmp_path / "pkg"; put(src, {"Data/SKSE/plugins/ENBHelperSE.dll": "x", "Data/SKSE/plugins/Autre.dll": "y"})
     dest = tmp_path / "base"
-    sy.assemble(dest, [sy.Source(src, exclude=sy.ENB_HELPERS)], "ENB")
+    sy.assemble(dest, [sy.Source(src, exclude=sy.ENB_INCOMPATIBLES)], "ENB")
     assert (dest / "Data/SKSE/plugins/Autre.dll").exists() and not (dest / "Data/SKSE/plugins/ENBHelperSE.dll").exists()
 
 
