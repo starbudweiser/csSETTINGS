@@ -567,4 +567,13 @@ TR = {
         "Un processo sembra il gioco: {proc}. Se Skyrim è davvero chiuso (è aperto solo CrossOver), continuare comunque?",
         "Un proceso parece el juego: {proc}. Si Skyrim está realmente cerrado (solo CrossOver está abierto), "
         "¿continuar de todos modos?"),
+    "<b>⚠ Backend graphique : {b}</b>. ENB rend correctement sous DXVK ; sous DXMT, la teinte est faussée (dominante verte). Dans CrossOver : bouteille › Réglages avancés › Graphismes › DXVK.": (
+        "<b>⚠ Graphics backend: {b}</b>. ENB renders correctly under DXVK; under DXMT the tint is off (green cast). In CrossOver: bottle › Advanced Settings › Graphics › DXVK.",
+        "<b>⚠ Backend grafico: {b}</b>. ENB si vede correttamente con DXVK; con DXMT la tinta è falsata (dominante verde). In CrossOver: bottiglia › Impostazioni avanzate › Grafica › DXVK.",
+        "<b>⚠ Backend gráfico: {b}</b>. ENB se ve bien con DXVK; con DXMT el tono se falsea (dominante verde). En CrossOver: botella › Ajustes avanzados › Gráficos › DXVK."),
+    "<b>⚠ Backend graphique : {b}</b>. Community Shaders (Bottled) a besoin de DXMT : sans lui, pas de pont DLSS → MetalFX. Dans CrossOver : bouteille › Réglages avancés › Graphismes › DXMT.": (
+        "<b>⚠ Graphics backend: {b}</b>. Community Shaders (Bottled) needs DXMT: without it, no DLSS → MetalFX bridge. In CrossOver: bottle › Advanced Settings › Graphics › DXMT.",
+        "<b>⚠ Backend grafico: {b}</b>. Community Shaders (Bottled) richiede DXMT: senza, nessun ponte DLSS → MetalFX. In CrossOver: bottiglia › Impostazioni avanzate › Grafica › DXMT.",
+        "<b>⚠ Backend gráfico: {b}</b>. Community Shaders (Bottled) necesita DXMT: sin él, no hay puente DLSS → MetalFX. En CrossOver: botella › Ajustes avanzados › Gráficos › DXMT."),
+    "Backend graphique : {b}.": ("Graphics backend: {b}.", "Backend grafico: {b}.", "Backend gráfico: {b}."),
 }

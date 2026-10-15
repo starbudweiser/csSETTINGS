@@ -210,3 +210,16 @@ def test_detection_du_jeu(monkeypatch):
     assert [pid for pid, _ in core.game_processes()] == [777]
     monkeypatch.setattr(core.subprocess, "run", fake("  778 C:\\Games\\Skyrim Special Edition\\SkyrimSE.exe\n"))
     assert core.game_running() is True
+
+
+def test_backend_bouteille(tmp_path):
+    """Le backend est lu dans cxbottle.conf, jamais modifié ; vide si le fichier manque."""
+    bottle = tmp_path / "Bouteille"; game = bottle / "drive_c" / "Games" / "Skyrim"; game.mkdir(parents=True)
+    assert core.bottle_backend(game) == ""
+    conf = bottle / "cxbottle.conf"
+    conf.write_text('[Bottle]\n[EnvironmentVariables]\n"CX_GRAPHICS_BACKEND" = "DXVK"\n"WINEMSYNC" = "1"\n')
+    before = conf.read_bytes()
+    assert core.bottle_backend(game) == "dxvk" and conf.read_bytes() == before
+    conf.write_text('[EnvironmentVariables]\n;;"CX_GRAPHICS_BACKEND" = "dxmt"\n')
+    assert core.bottle_backend(game) == ""
+    assert core.BACKEND_FOR == {"ENB": "dxvk", "CS": "dxmt"}

@@ -140,6 +140,25 @@ def game_dir(cs_dir: str) -> Path:
     return Path(cs_dir).parents[3]
 
 
+def bottle_backend(game: Path) -> str:
+    """Backend graphique de la bouteille CrossOver (dxmt, dxvk, d3dmetal…), lu dans cxbottle.conf sans rien
+    modifier ; « » si le fichier est introuvable ou muet. cxbottle.conf se trouve dans un dossier parent du jeu."""
+    for parent in Path(game).parents:
+        conf = parent / "cxbottle.conf"
+        if conf.is_file():
+            try:
+                m = re.search(r'^\s*"CX_GRAPHICS_BACKEND"\s*=\s*"([^"]*)"', conf.read_text(encoding="utf-8",
+                              errors="replace"), re.M)
+            except OSError:
+                return ""
+            return m.group(1).strip().lower() if m else ""
+    return ""
+
+
+# Backend attendu par système : ENB suit DXVK (rendu fidèle à Windows) ; CS (Bottled) a besoin du pont DLSS → MetalFX de DXMT
+BACKEND_FOR = {"ENB": "dxvk", "CS": "dxmt"}
+
+
 def _copy(src: Path, dst: Path) -> None:
     if src.is_dir():
         shutil.copytree(src, dst, ignore=shutil.ignore_patterns(*SKIP))

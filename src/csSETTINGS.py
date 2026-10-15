@@ -979,6 +979,20 @@ class Main(QWidget):
                 lines.append("<b>⚠</b> " + " ; ".join(problems))
             else:
                 lines.append(L("Skyrim {v} détecté, SKSE présent.", v=systems.game_version(game)))
+            backend = core.bottle_backend(game)
+            want = core.BACKEND_FOR.get(self.sysname or "")
+            if backend and want and backend != want:
+                tone = "warning"
+                if self.sysname == systems.ENB:
+                    lines.append(L("<b>⚠ Backend graphique : {b}</b>. ENB rend correctement sous DXVK ; sous DXMT, "
+                                   "la teinte est faussée (dominante verte). Dans CrossOver : bouteille › Réglages "
+                                   "avancés › Graphismes › DXVK.", b=backend.upper()))
+                else:
+                    lines.append(L("<b>⚠ Backend graphique : {b}</b>. Community Shaders (Bottled) a besoin de DXMT : "
+                                   "sans lui, pas de pont DLSS → MetalFX. Dans CrossOver : bouteille › Réglages "
+                                   "avancés › Graphismes › DXMT.", b=backend.upper()))
+            elif backend:
+                lines.append(L("Backend graphique : {b}.", b=backend.upper()))
             for layer in systems.installed(game):
                 try:
                     v = systems.verify(game, layer)
