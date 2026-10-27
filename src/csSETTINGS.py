@@ -753,7 +753,7 @@ class Main(QWidget):
         """Encart Socle (Callout) sur un QLabel : success, info ou warning."""
         r, pad = int(S.m("radius")), int(S.m("space-2"))
         label.setTextFormat(Qt.TextFormat.RichText)
-        label.setStyleSheet(f"QLabel {{ background: {S.c(tone + '-bg')}; color: {S.c(tone + '-soft')}; "
+        label.setStyleSheet(f"QLabel {{ background: {S.c('surface-raised' if tone == 'info' else tone + '-bg')}; color: {S.c(tone + '-soft')}; "
                             f"border: 1px solid {S.c(tone + '-border')}; border-radius: {r}px; padding: {pad}px; }}")
 
     def _enb_tab(self):
@@ -1353,7 +1353,7 @@ class Main(QWidget):
             text = "<br>".join(parts)
         tone = {"ok": "success", "info": "info", "warning": "warning"}[level]
         r, pad = int(S.m("radius")), int(S.m("space-2"))
-        self.compat.setStyleSheet(f"QLabel {{ background: {S.c(tone + '-bg')}; color: {S.c(tone + '-soft')}; "
+        self.compat.setStyleSheet(f"QLabel {{ background: {S.c('surface-raised' if tone == 'info' else tone + '-bg')}; color: {S.c(tone + '-soft')}; "
                                   f"border: 1px solid {S.c(tone + '-border')}; border-radius: {r}px; "
                                   f"padding: {pad}px; }}")
         self.compat.setText(text)
@@ -1537,6 +1537,7 @@ def main():
     app = QApplication(sys.argv)
     app.setApplicationName(APP)
     S.apply(app, "dark")
+    S.brand(app, "csSETTINGS", "#14a5e6")  # « cs » dans le bleu du curseur du logo
     Path(cfg["library"]).mkdir(parents=True, exist_ok=True) if os.path.isdir(os.path.dirname(cfg["library"])) else None
     w = Main(cfg)
     w.show()
