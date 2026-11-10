@@ -3,6 +3,8 @@
 **Community Shaders preset picker for Skyrim on Mac (CrossOver) — browse, apply, back up and restore presets.**  
 *Sélecteur de presets Community Shaders pour Skyrim sur Mac (CrossOver) — parcourir, appliquer, sauvegarder et restaurer.*
 
+🍏 **Native Mac app written in Swift, signed and notarized by Apple.** · *Appli Mac native écrite en Swift, signée et notarisée par Apple.*
+
 ## About
 csSETTINGS manages the Community Shaders presets of a Skyrim bottle running under CrossOver: browse, apply, back up and restore. Made by **Starbudweiser & Claude Code (Anthropic)**. MIT License, © 2026 Starbudweiser. Provided as is, without warranty of any kind. Not affiliated with the Community Shaders authors or with Nexus Mods. In the app: **csSETTINGS › About csSETTINGS**.
 
@@ -25,9 +27,18 @@ csSETTINGS manages the Community Shaders (Bottled Shaders) presets of a Skyrim b
 - Interface in **English, French, Italian and Spanish** (follows your Mac's language).
 - **Automatic updates**: once a day the app checks GitHub for a new release, shows what changed and installs it (checksum, Developer ID signature and notarization verified), never while a task is running. Settings › Updates: *Install updates automatically* and *Check now*.
 
+### What's new in 2.0.0
+
+- Rewritten as a native Swift app (no more Python/PyQt/PyInstaller): same features, same texts in four languages, same look.
+- Signed with a Developer ID and notarized by Apple: macOS opens the app without a security warning.
+
 ### Install
 
-Download the latest version from the [Releases](https://github.com/starbudweiser/csSETTINGS/releases/latest) page, unzip it and move csSETTINGS to your Applications folder. macOS, Apple Silicon.
+Download the latest version from the [Releases](https://github.com/starbudweiser/csSETTINGS/releases/latest) page, unzip it and move csSETTINGS to your Applications folder. Apple Silicon Mac, macOS 15 Sequoia or later. No Python needed.
+
+### Build from source
+
+Requires Xcode (Swift 6): `./build_app.sh` builds `csSETTINGS.app` (tests included, `swift test --package-path macos`).
 
 ---
 ## 🇫🇷 Français
@@ -46,9 +57,18 @@ csSETTINGS gère les presets Community Shaders (Bottled Shaders) d'une bouteille
 - Interface en **anglais, français, italien et espagnol** (suit la langue de votre Mac).
 - **Mises à jour automatiques** : une fois par jour, l'appli cherche une nouvelle version sur GitHub, montre les nouveautés et l'installe (somme de contrôle, signature Developer ID et notarisation vérifiées), jamais pendant un traitement. Réglages › Mises à jour : *Installer automatiquement les mises à jour* et *Rechercher maintenant*.
 
+### Nouveautés de la 2.0.0
+
+- Réécrite en appli Swift native (plus de Python, de PyQt ni de PyInstaller) : mêmes fonctions, mêmes textes dans les quatre langues, même aspect.
+- Signée avec un certificat Developer ID et notarisée par Apple : macOS ouvre l'appli sans avertissement de sécurité.
+
 ### Installation
 
-Téléchargez la dernière version sur la page [Releases](https://github.com/starbudweiser/csSETTINGS/releases/latest), décompressez-la et déplacez csSETTINGS dans Applications. macOS, Apple Silicon.
+Téléchargez la dernière version sur la page [Releases](https://github.com/starbudweiser/csSETTINGS/releases/latest), décompressez-la et déplacez csSETTINGS dans Applications. Mac Apple Silicon, macOS 15 Sequoia ou plus récent. Python n'est pas nécessaire.
+
+### Compiler depuis les sources
+
+Xcode (Swift 6) requis : `./build_app.sh` produit `csSETTINGS.app` (tests compris, `swift test --package-path macos`).
 
 ---
 Licence : MIT

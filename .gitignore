@@ -29,3 +29,7 @@ logs/
 
 # Notes personnelles
 PASSATION_*.md
+
+# Swift
+.build/
+.swiftpm/
