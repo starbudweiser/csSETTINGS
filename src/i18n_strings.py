@@ -576,4 +576,17 @@ TR = {
         "<b>⚠ Backend grafico: {b}</b>. Community Shaders (Bottled) richiede DXMT: senza, nessun ponte DLSS → MetalFX. In CrossOver: bottiglia › Impostazioni avanzate › Grafica › DXMT.",
         "<b>⚠ Backend gráfico: {b}</b>. Community Shaders (Bottled) necesita DXMT: sin él, no hay puente DLSS → MetalFX. En CrossOver: botella › Ajustes avanzados › Gráficos › DXMT."),
     "Backend graphique : {b}.": ("Graphics backend: {b}.", "Backend grafico: {b}.", "Backend gráfico: {b}."),
+    "À propos de {app}": ("About {app}", "Informazioni su {app}", "Acerca de {app}"),
+    "Version {v} ({b})": ("Version {v} ({b})", "Versione {v} ({b})", "Versión {v} ({b})"),
+    "Version de développement": ("Development version", "Versione di sviluppo", "Versión de desarrollo"),
+    "Sélecteur de presets Community Shaders pour Skyrim sur Mac (CrossOver) : parcourir, appliquer, sauvegarder et restaurer.": (
+        "Community Shaders preset picker for Skyrim on Mac (CrossOver): browse, apply, back up and restore.",
+        "Selettore di preset Community Shaders per Skyrim su Mac (CrossOver): sfoglia, applica, salva e ripristina.",
+        "Selector de presets de Community Shaders para Skyrim en Mac (CrossOver): explorar, aplicar, guardar y restaurar."),
+    "Licence MIT. © 2026 Starbudweiser.": ("MIT License. © 2026 Starbudweiser.", "Licenza MIT. © 2026 Starbudweiser.",
+                                           "Licencia MIT. © 2026 Starbudweiser."),
+    "Fourni en l'état, sans garantie. Sans lien avec les auteurs de Community Shaders ni avec Nexus Mods.": (
+        "Provided as is, without warranty. Not affiliated with the Community Shaders authors or with Nexus Mods.",
+        "Fornito così com'è, senza garanzia. Nessun legame con gli autori di Community Shaders né con Nexus Mods.",
+        "Se ofrece tal cual, sin garantía. Sin relación con los autores de Community Shaders ni con Nexus Mods."),
 }

@@ -15,11 +15,11 @@ import time
 from pathlib import Path
 
 from PyQt6.QtCore import QLocale, QPoint, Qt, QThread, QTimer, QUrl, pyqtSignal
-from PyQt6.QtGui import QDesktopServices
+from PyQt6.QtGui import QAction, QDesktopServices, QPixmap
 from PyQt6.QtWebEngineCore import QWebEngineDownloadRequest, QWebEnginePage, QWebEngineProfile
 from PyQt6.QtWebEngineWidgets import QWebEngineView
 from PyQt6.QtWidgets import (QApplication, QComboBox, QDialog, QFileDialog, QFormLayout, QHBoxLayout, QHeaderView,
-                             QInputDialog, QLabel, QLineEdit, QListWidget, QListWidgetItem, QMenu, QMessageBox,
+                             QInputDialog, QLabel, QLineEdit, QListWidget, QListWidgetItem, QMenu, QMenuBar, QMessageBox,
                              QPlainTextEdit, QProgressBar, QPushButton, QSizePolicy, QSplitter, QTableWidget, QTableWidgetItem,
                              QTabWidget, QVBoxLayout, QWidget)
 
@@ -28,6 +28,7 @@ import i18n
 import nexus
 import socle_qt as S
 import systems
+import updater
 from i18n import L
 
 APP = "csSETTINGS"
@@ -42,15 +43,20 @@ class Worker(QThread):
     done = pyqtSignal(object)
     failed = pyqtSignal(str)
 
+    active = 0  # traitements en cours : la mise à jour automatique attend qu'ils finissent
+
     def __init__(self, fn):
         super().__init__()
         self.fn = fn
 
     def run(self):
+        Worker.active += 1
         try:
             self.done.emit(self.fn(lambda a, b: self.progress.emit(int(a), int(b))))
         except Exception as e:  # noqa: BLE001 — l'erreur est montrée à l'utilisateur
             self.failed.emit(f"{type(e).__name__}: {e}")
+        finally:
+            Worker.active -= 1
 
 
 def reveal(path) -> None:
@@ -128,6 +134,10 @@ class SettingsDialog(QDialog):
         S.role(self.key_state, "meta")
         lay.addWidget(self.key_state)
 
+        ctl = getattr(parent, "_updater", None)
+        if ctl is not None:  # section « Mises à jour » : installation automatique et vérification manuelle
+            lay.addWidget(ctl.settings_widget())
+
         btns = QHBoxLayout()
         btns.addStretch(1)
         cancel = QPushButton(L("Annuler"))
@@ -173,6 +183,76 @@ class SettingsDialog(QDialog):
             QMessageBox.warning(self, APP, L("Impossible d'enregistrer la clé dans le trousseau : {err}", err=e))
             return
         self.accept()
+
+
+# ------------------------------------------------------------------ À propos (modèle Socle : AboutWindow de mDESK)
+
+class AboutDialog(QDialog):
+    """Fenêtre « À propos » : icône, nom, version lue dans l'appli, description, auteurs, licence, avertissement."""
+    _instance = None
+
+    @classmethod
+    def show_for(cls, parent):
+        if cls._instance is None:
+            cls._instance = cls(parent)
+        dlg = cls._instance
+        dlg.show()
+        S.centrer(dlg, parent)
+        dlg.raise_()
+        dlg.activateWindow()
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle(L("À propos de {app}", app=APP))
+        self.setWindowFlags(Qt.WindowType.Dialog | Qt.WindowType.CustomizeWindowHint | Qt.WindowType.WindowTitleHint
+                            | Qt.WindowType.WindowCloseButtonHint)
+        lay = QVBoxLayout(self)
+        lay.setContentsMargins(28, 28, 28, 28)
+        lay.setSpacing(12)
+        center = Qt.AlignmentFlag.AlignHCenter
+
+        icon = QLabel()
+        pix = QPixmap(str(Path(__file__).resolve().parent.parent / "assets" / "icon.png"))
+        if pix.isNull():
+            pix = QPixmap(str(Path(sys.executable).resolve().parent.parent / "Resources" / "icon.icns"))
+        if not pix.isNull():
+            icon.setPixmap(pix.scaled(84, 84, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
+        icon.setAlignment(center)
+        lay.addWidget(icon)
+
+        info = updater.bundle_info(updater.app_path())
+        ver, build = info.get("CFBundleShortVersionString"), info.get("CFBundleVersion")
+        name = QLabel(APP)
+        name.setStyleSheet("font-size: 17px; font-weight: 700;")
+        version = QLabel(L("Version {v} ({b})", v=ver, b=build) if ver else L("Version de développement"))
+        S.role(version, "muted")
+        head = QVBoxLayout()
+        head.setSpacing(6)
+        for w in (name, version):
+            w.setAlignment(center)
+            head.addWidget(w)
+        lay.addLayout(head)
+        lay.addSpacing(6)  # 18 px entre la version et la description
+
+        texts = [(L("Sélecteur de presets Community Shaders pour Skyrim sur Mac (CrossOver) : parcourir, appliquer, "
+                    "sauvegarder et restaurer."), None),
+                 ("Starbudweiser & Claude Code (Anthropic)", "bold"),
+                 (L("Licence MIT. © 2026 Starbudweiser."), None),
+                 (L("Fourni en l'état, sans garantie. Sans lien avec les auteurs de Community Shaders ni avec Nexus Mods."),
+                  "muted")]
+        for text, kind in texts:
+            lab = QLabel(text)
+            lab.setWordWrap(True)
+            lab.setFixedWidth(300)
+            lab.setAlignment(center)
+            if kind == "bold":
+                lab.setStyleSheet("font-weight: 700;")
+            elif kind == "muted":
+                S.role(lab, "muted")
+            lay.addWidget(lab, 0, center)
+        self.setFixedWidth(356)
+        self.adjustSize()
+        self.setFixedHeight(self.sizeHint().height())
 
 
 # ------------------------------------------------------------------ Nexus
@@ -1541,6 +1621,14 @@ def main():
     Path(cfg["library"]).mkdir(parents=True, exist_ok=True) if os.path.isdir(os.path.dirname(cfg["library"])) else None
     w = Main(cfg)
     w.show()
+    # menu de l'appli : « À propos de csSETTINGS » (texte normal dans le menu) et « Rechercher les mises à jour… »
+    about = QAction(L("À propos de {app}", app=APP), w)
+    about.setMenuRole(QAction.MenuRole.AboutRole)
+    about.triggered.connect(lambda: AboutDialog.show_for(w))
+    w.menu_bar = QMenuBar()  # barre de menus macOS (sans parent : commune à toutes les fenêtres), reprise par l'updater
+    w.menu_bar.addMenu(APP).addAction(about)
+    updater.start_qt(w, "csSETTINGS", lang=i18n.get_lang,
+                     busy=lambda: Worker.active > 0 or getattr(w, "_sys_busy", False))
     sys.exit(app.exec())
 
 

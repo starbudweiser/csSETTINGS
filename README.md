@@ -3,6 +3,9 @@
 **Community Shaders preset picker for Skyrim on Mac (CrossOver) — browse, apply, back up and restore presets.**  
 *Sélecteur de presets Community Shaders pour Skyrim sur Mac (CrossOver) — parcourir, appliquer, sauvegarder et restaurer.*
 
+## About
+csSETTINGS manages the Community Shaders presets of a Skyrim bottle running under CrossOver: browse, apply, back up and restore. Made by **Starbudweiser & Claude Code (Anthropic)**. MIT License, © 2026 Starbudweiser. Provided as is, without warranty of any kind. Not affiliated with the Community Shaders authors or with Nexus Mods. In the app: **csSETTINGS › About csSETTINGS**.
+
 🇬🇧 [English](#-english) · 🇫🇷 [Français](#-français)
 
 ---
@@ -20,6 +23,7 @@ csSETTINGS manages the Community Shaders (Bottled Shaders) presets of a Skyrim b
 - **Nexus Mods**: download presets from Nexus Mods inside the app (a Premium account and your API key are required; the key is stored in the macOS Keychain, never in a file).
 - **Shader systems**: switch between Community Shaders and ENB with checked backups.
 - Interface in **English, French, Italian and Spanish** (follows your Mac's language).
+- **Automatic updates**: once a day the app checks GitHub for a new release, shows what changed and installs it (checksum, Developer ID signature and notarization verified), never while a task is running. Settings › Updates: *Install updates automatically* and *Check now*.
 
 ### Install
 
@@ -40,6 +44,7 @@ csSETTINGS gère les presets Community Shaders (Bottled Shaders) d'une bouteille
 - **Nexus Mods** : téléchargez des presets depuis l'appli (compte Premium et clé d'API requis ; la clé est gardée dans le Trousseau macOS, jamais dans un fichier).
 - **Systèmes de shaders** : passez de Community Shaders à ENB, avec des sauvegardes vérifiées.
 - Interface en **anglais, français, italien et espagnol** (suit la langue de votre Mac).
+- **Mises à jour automatiques** : une fois par jour, l'appli cherche une nouvelle version sur GitHub, montre les nouveautés et l'installe (somme de contrôle, signature Developer ID et notarisation vérifiées), jamais pendant un traitement. Réglages › Mises à jour : *Installer automatiquement les mises à jour* et *Rechercher maintenant*.
 
 ### Installation
 

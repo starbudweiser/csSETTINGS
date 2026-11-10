@@ -5,7 +5,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SRC="$ROOT/src/csSETTINGS.py"
 APP_NAME="csSETTINGS"
-VERSION="1.0.0"
+VERSION="1.1.0"
 TMP="$(mktemp -d "${TMPDIR:-/tmp}/cssettings_build.XXXXXX")"
 
 cleanup() { rm -rf "$TMP" "$ROOT/build" "$ROOT/$APP_NAME.spec" "$ROOT/src/__pycache__"; }
