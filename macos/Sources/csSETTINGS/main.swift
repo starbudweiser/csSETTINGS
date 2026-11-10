@@ -36,8 +36,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         window.backgroundColor = NSColor(Socle.C.bg)
         window.contentMinSize = NSSize(width: 980, height: 600)
         window.setContentSize(WINDOW_SIZE)
-        window.setFrameAutosaveName("csSETTINGS.main")
-        if window.frame.origin == .zero { window.socleCenter() }
+        window.socleCenter()   // règle Socle : fenêtre centrée à chaque lancement (pas de position mémorisée)
         if env["CSSETTINGS_QUIET"] != nil {
             window.orderBack(nil)
         } else {
