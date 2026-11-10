@@ -1,32 +1,28 @@
+<p align="center"><img src="assets/icon.png" width="128" alt="csSETTINGS"></p>
+
 # csSETTINGS
 
-[![Listed on OpenMacApps](https://openmacapps.com/badge.svg)](https://openmacapps.com/apps/cssettings/)
+[![Listed on OpenMacApps](https://openmacapps.com/badge.svg)](https://openmacapps.com/apps/cssettings/) [![Latest release](https://img.shields.io/github/v/release/starbudweiser/csSETTINGS)](https://github.com/starbudweiser/csSETTINGS/releases/latest) [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-**Community Shaders preset picker for Skyrim on Mac (CrossOver) — browse, apply, back up and restore presets.**  
-*Sélecteur de presets Community Shaders pour Skyrim sur Mac (CrossOver) — parcourir, appliquer, sauvegarder et restaurer.*
+**Community Shaders preset picker for Skyrim on Mac (CrossOver) — browse, apply, back up and restore presets.**
 
-🍏 **Native Mac app written in Swift, signed and notarized by Apple.** · *Appli Mac native écrite en Swift, signée et notarisée par Apple.*
+🇬🇧 English · 🇫🇷 [Français](#français)
 
 ## About
+
 csSETTINGS manages the Community Shaders presets of a Skyrim bottle running under CrossOver: browse, apply, back up and restore. Made by **Starbudweiser & Claude Code (Anthropic)**. MIT License, © 2026 Starbudweiser. Provided as is, without warranty of any kind. Not affiliated with the Community Shaders authors or with Nexus Mods. In the app: **csSETTINGS › About csSETTINGS**.
 
-🇬🇧 [English](#-english) · 🇫🇷 [Français](#-français)
-
----
-## 🇬🇧 English
-
-### About
+🍏 **Native Mac app written in Swift, signed and notarized by Apple.**
 
 csSETTINGS manages the Community Shaders (Bottled Shaders) presets of a Skyrim bottle running under CrossOver. It is part of the Skyrim Tools family of native macOS apps: <https://starbudweiser.github.io/skyrim-tools/>
 
-### What it does
+## Features
 
 - **Preset library**: keep all your presets in one place and apply one in a click.
 - **Safe changes**: an automatic backup is made before every apply, and any state can be restored.
 - **Import**: add presets from archives or folders.
 - **Nexus Mods**: download presets from Nexus Mods inside the app (a Premium account and your API key are required; the key is stored in the macOS Keychain, never in a file).
 - **Shader systems**: switch between Community Shaders and ENB with checked backups.
-- Interface in **English, French, Italian and Spanish** (follows your Mac's language).
 - **Automatic updates**: once a day the app checks GitHub for a new release, shows what changed and installs it (checksum, Developer ID signature and notarization verified), never while a task is running. Settings › Updates: *Install updates automatically* and *Check now*.
 
 ### What's new in 2.0.0
@@ -34,16 +30,35 @@ csSETTINGS manages the Community Shaders (Bottled Shaders) presets of a Skyrim b
 - Rewritten as a native Swift app (no more Python/PyQt/PyInstaller): same features, same texts in four languages, same look.
 - Signed with a Developer ID and notarized by Apple: macOS opens the app without a security warning.
 
-### Install
+## Install
 
-Download the latest version from the [Releases](https://github.com/starbudweiser/csSETTINGS/releases/latest) page, unzip it and move csSETTINGS to your Applications folder. Apple Silicon Mac, macOS 15 Sequoia or later. No Python needed.
+**[Download the latest notarized release](https://github.com/starbudweiser/csSETTINGS/releases/latest)**, unzip it and move csSETTINGS to your Applications folder. Apple Silicon Mac, **macOS 15 Sequoia** or later. No Python needed.
 
-### Build from source
+## Build
 
 Requires Xcode (Swift 6): `./build_app.sh` builds `csSETTINGS.app` (tests included, `swift test --package-path macos`).
 
+## Languages
+
+English, French, Spanish and Italian. The app follows your Mac's preferred language automatically (English if it is none of these four).
+
+## Support
+
+💬 Help and community: [Skyrim Mac Toolkit Discord](https://discord.gg/jRS4rvynx6) · bug reports: [GitHub Issues](https://github.com/starbudweiser/csSETTINGS/issues).
+
+## License
+
+Released under the **MIT License**, © 2026 Starbudweiser. See [LICENSE](LICENSE).
+
 ---
-## 🇫🇷 Français
+
+## Français
+
+**Sélecteur de presets Community Shaders pour Skyrim sur Mac (CrossOver) — parcourir, appliquer, sauvegarder et restaurer.**
+
+🍏 *Appli Mac native écrite en Swift, signée et notarisée par Apple.*
+
+💬 Aide et communauté : [Discord du Skyrim Mac Toolkit](https://discord.gg/jRS4rvynx6)
 
 ### À propos
 
@@ -72,5 +87,6 @@ Téléchargez la dernière version sur la page [Releases](https://github.com/sta
 
 Xcode (Swift 6) requis : `./build_app.sh` produit `csSETTINGS.app` (tests compris, `swift test --package-path macos`).
 
----
-Licence : MIT
+### Licence
+
+MIT
