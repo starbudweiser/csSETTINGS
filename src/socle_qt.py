@@ -68,6 +68,7 @@ TOKENS = {'version': 1,
                      'danger-bg': '#4a1c1c',
                      'danger-border': '#ef4444',
                      'danger-soft': '#fecaca',
+                     'danger-fill': '#923535',
                      'info-border': '#38bdf8',
                      'info-soft': '#bae6fd',
                      'bubble-help': '#0ea5e9',
@@ -122,6 +123,7 @@ TOKENS = {'version': 1,
                       'danger-bg': '#fee2e2',
                       'danger-border': '#dc2626',
                       'danger-soft': '#7f1d1d',
+                      'danger-fill': '#eb9090',
                       'info-border': '#0284c7',
                       'info-soft': '#0c4a6e',
                       'bubble-help': '#0ea5e9',
@@ -274,8 +276,15 @@ class WrapChoice(QWidget):
         lay = QHBoxLayout(self)
         lay.setContentsMargins(0, 0, 0, 0)
         lay.setSpacing(int(m("space-2.5")))
+        # case et libellé calés en haut ; la case a la hauteur optique de la première ligne
+        # (deux fois le milieu des capitales) : son centre tombe au milieu des majuscules
+        fm = self.label.fontMetrics()
+        self.box.setFixedHeight(round(2 * (fm.ascent() - fm.capHeight() / 2)))
+        # le style macOS décale sinon la case de quelques px (marges de « layout item »)
+        self.box.setAttribute(Qt.WidgetAttribute.WA_LayoutUsesWidgetRect)
+        self.box.setFixedWidth(int(m("size-choice")))  # rien que l'indicateur : l'écart vient du layout
         lay.addWidget(self.box, 0, Qt.AlignmentFlag.AlignTop)
-        lay.addWidget(self.label, 1)
+        lay.addWidget(self.label, 1, Qt.AlignmentFlag.AlignTop)
         self.toggled = self.box.toggled
         self.setFocusProxy(self.box)
 
@@ -319,26 +328,54 @@ def fit_height(window: QWidget) -> QWidget:
     return window
 
 
-def centrer(window: QWidget) -> QWidget:
-    """Centre la fenêtre sur l'écran du pointeur, dans sa zone utile (hors barre des menus et Dock)."""
+def centrer(window: QWidget, sur: QWidget | None = None) -> QWidget:
+    """Centre la fenêtre sur la fenêtre `sur` si elle est donnée, sinon sur l'écran du pointeur (zone utile : hors barre des menus et Dock)."""
+    cadre = window.frameGeometry()
+    if sur is not None:
+        cadre.moveCenter(sur.frameGeometry().center())
+        ecran = QGuiApplication.screenAt(sur.frameGeometry().center()) or QGuiApplication.primaryScreen()
+        zone = ecran.availableGeometry()
+        window.move(min(max(zone.left(), cadre.left()), max(zone.left(), zone.right() - cadre.width() + 1)),
+                    min(max(zone.top(), cadre.top()), max(zone.top(), zone.bottom() - cadre.height() + 1)))
+        return window
     ecran = QGuiApplication.screenAt(QCursor.pos()) or QGuiApplication.primaryScreen()
     zone = ecran.availableGeometry()
-    cadre = window.frameGeometry()
     window.move(max(zone.left(), zone.center().x() - cadre.width() // 2),
                 max(zone.top(), zone.center().y() - cadre.height() // 2))
     return window
 
 
+def fenetre_appli(sauf: QWidget | None = None) -> QWidget | None:
+    """Fenêtre de l'appli sur laquelle centrer une fenêtre secondaire : sa fenêtre parente, la fenêtre active, sinon une autre fenêtre visible."""
+    candidates = []
+    if sauf is not None and sauf.parentWidget() is not None:
+        candidates.append(sauf.parentWidget().window())
+    candidates.append(QApplication.activeWindow())
+    candidates += QApplication.topLevelWidgets()
+    for w in candidates:
+        if (w is not None and w is not sauf and w.isVisible() and w.windowType() in (Qt.WindowType.Window, Qt.WindowType.Dialog)
+                and not w.size().isEmpty()):
+            return w
+    return None
+
+
 class _Centrage(QObject):
+    """Première fenêtre : centrée sur l'écran. Fenêtres secondaires (dialogues, alertes) : centrées sur la fenêtre de l'appli, à chaque affichage."""
+
     def eventFilter(self, obj, event):
-        if (event.type() == QEvent.Type.Show and isinstance(obj, QWidget) and obj.isWindow()
-                and obj.windowType() == Qt.WindowType.Window and not obj.property("socle_centre")):
+        if event.type() == QEvent.Type.Show and isinstance(obj, QWidget) and obj.isWindow():
+            type_ = obj.windowType()
+            secondaire = type_ == Qt.WindowType.Dialog
+            if type_ not in (Qt.WindowType.Window, Qt.WindowType.Dialog) or (not secondaire and obj.property("socle_centre")):
+                return False
+            if secondaire and obj.property("socle_centre_manuel"):   # l'appli centre elle-même (ex. « À propos »)
+                return False
             obj.setProperty("socle_centre", True)
-            if not obj.testAttribute(Qt.WidgetAttribute.WA_Moved):  # une fenêtre placée par l'appli (splash) reste où elle est
-                centrer(obj)
+            if not obj.testAttribute(Qt.WidgetAttribute.WA_Moved) or secondaire:  # une fenêtre placée par l'appli (splash) reste où elle est
+                centrer(obj, fenetre_appli(obj) if secondaire else None)
                 recentrage = QTimer(obj)  # la barre de titre ne compte dans le cadre qu'une fois la fenêtre affichée
                 recentrage.setSingleShot(True)
-                recentrage.timeout.connect(lambda: centrer(obj))
+                recentrage.timeout.connect(lambda: centrer(obj, fenetre_appli(obj) if secondaire else None))
                 recentrage.start(0)
         return False
 
@@ -545,6 +582,7 @@ QComboBox QAbstractItemView {{ background-color: {k['surface']}; color: {k['text
 QComboBox QAbstractItemView::item {{ min-height: {m('size-control') - 8}px; padding: 0 {m('space-2')}px; border-radius: {r}px; }}
 
 /* Choix */
+QSlider {{ background: transparent; }}
 QCheckBox, QRadioButton {{ background: transparent; spacing: {m('space-2.5')}px; color: {k['text']}; }}
 QCheckBox::indicator, QRadioButton::indicator {{ width: {m('size-choice') - 3}px; height: {m('size-choice') - 3}px; border: 1.5px solid {k['border-control']}; background-color: {k['surface']}; }}
 QCheckBox::indicator {{ border-radius: {r}px; }}

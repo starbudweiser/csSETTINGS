@@ -5,6 +5,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SRC="$ROOT/src/csSETTINGS.py"
 APP_NAME="csSETTINGS"
+VERSION="1.0.0"
 TMP="$(mktemp -d "${TMPDIR:-/tmp}/cssettings_build.XXXXXX")"
 
 cleanup() { rm -rf "$TMP" "$ROOT/build" "$ROOT/$APP_NAME.spec" "$ROOT/src/__pycache__"; }
@@ -23,5 +24,7 @@ pyinstaller --noconfirm --clean --windowed --name "$APP_NAME" \
 
 [ -d "$TMP/dist/$APP_NAME.app" ] || { echo "Erreur : app non générée." >&2; exit 1; }
 mv "$TMP/dist/$APP_NAME.app" "$ROOT/$APP_NAME.app"
+plutil -replace CFBundleShortVersionString -string "$VERSION" "$ROOT/$APP_NAME.app/Contents/Info.plist"
+plutil -replace CFBundleVersion -string "$VERSION" "$ROOT/$APP_NAME.app/Contents/Info.plist"
 "$(cd "$ROOT/.." && pwd)/_tools/sign_app.sh" "$ROOT/$APP_NAME.app"  # signature stable (_tools)
 echo "OK : $ROOT/$APP_NAME.app"
