@@ -1,5 +1,7 @@
 # csSETTINGS
 
+[![Listed on OpenMacApps](https://openmacapps.com/badge.svg)](https://openmacapps.com/apps/cssettings/)
+
 **Community Shaders preset picker for Skyrim on Mac (CrossOver) — browse, apply, back up and restore presets.**  
 *Sélecteur de presets Community Shaders pour Skyrim sur Mac (CrossOver) — parcourir, appliquer, sauvegarder et restaurer.*
 
