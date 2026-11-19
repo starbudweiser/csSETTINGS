@@ -68,7 +68,7 @@ public enum Nexus {
             let msg = (try? JSON.parse(data))?["message"]?.string ?? ""
             throw Failure(message: "HTTP \(resp.statusCode) \(msg)".trimmingCharacters(in: .whitespaces))
         }
-        do { return try JSON.parse(data) } catch { throw Failure(message: "JSON") }
+        do { return try JSON.parse(data) } catch { throw Failure(message: L("JSON illisible")) }
     }
 
     /// {name, is_premium…} pour la clé donnée.
@@ -144,7 +144,7 @@ public enum Nexus {
         var path = "/games/\(game)/mods/\(mod)/files/\(file["file_id"]?.pyStr ?? "")/download_link.json"
         if let nxm, !nxm.key.isEmpty { path += "?key=\(quote(nxm.key))&expires=\(quote(nxm.expires))" }
         guard let link = try get(path, key: key).array?.first?["URI"]?.string, let url = URL(string: link) else {
-            throw Failure(message: "no link")
+            throw Failure(message: L("aucun lien de téléchargement"))
         }
         let fileName = file["file_name"]?.string.flatMap { $0.isEmpty ? nil : $0 } ?? url.lastPathComponent
         let out = destDir.sub((fileName as NSString).lastPathComponent)

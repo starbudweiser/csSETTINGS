@@ -233,4 +233,8 @@ let translations: [String: [String]] = [
     "« {name} » est installé : utilisez l'échange de système.": ["“{name}” is installed: use the system switch.", "« {name} » è installato: usi lo scambio di sistema.", "« {name} » está instalado: use el cambio de sistema."],
     "« {name} » n'est pas installé.": ["“{name}” is not installed.", "« {name} » non è installato.", "« {name} » no está instalado."],
     "Édition": ["Edit", "Modifica", "Edición"],
+    "{n} octet": ["{n} byte", "{n} byte", "{n} byte"],
+    "{n} octets": ["{n} bytes", "{n} byte", "{n} bytes"],
+    "JSON illisible": ["unreadable JSON", "JSON illeggibile", "JSON ilegible"],
+    "aucun lien de téléchargement": ["no download link", "nessun link di download", "ningún enlace de descarga"],
 ]
